@@ -12,3 +12,4 @@ char* say_hi(); /* This is a function prototype it defines the return type,
 #endif /* HI_H - This is just the end of the if statement */
 
 /* Journey on over to `src/main.c` for the next comments. */
+ere we keep our

@@ -15,7 +15,8 @@
 
 #define MAXVALUE 10
 
-int validargs_helper(char *arguments , char char_to_check);
+int validargs_helper(char *arguments , char *str_to_check);
+int int_validation(char *int_str);
 
 /**
  * @brief Validates command line arguments passed to the program.
@@ -33,12 +34,14 @@ int validargs_helper(char *arguments , char char_to_check);
  */
 unsigned short validargs(int argc, char **argv)
 {
-
-    // Not sure what the purpose of this is
-    int i;
     // The local variable that will return final mode of operation
     unsigned short mode_of_operation = 0x0000;
-    printf("The unsigned short to return: 0x%04x\n", mode_of_operation);
+    int optional_arg_pos;
+    int k_found = 0;
+    int r_found = 0;
+    int c_found = 0;
+    int row_value = 10;
+    int col_value = 10;
 
     // If there are not enough arguments
     if (argc <= 1 || argc > MAXVALUE)
@@ -54,15 +57,15 @@ unsigned short validargs(int argc, char **argv)
         {
             // Highest order bit
             // This is the first argument after the name of the program
-            if(validargs_helper(*((argv+1)), 'h'))
+            if(validargs_helper(*((argv+1)), "-h"))
                 return 0x8000;
-            else if (validargs_helper(*((argv+1)), 'p'))
+            else if (validargs_helper(*((argv+1)), "-p"))
             {
                 //OR the second highest order bit with 0
                 mode_of_operation |= 0x0000;
             }
             // This will check if there are more arguments to check
-            else if (validargs_helper(*((argv+1)), 'f'))
+            else if (validargs_helper(*((argv+1)), "-f"))
             {
                 //OR the second highest order bit with 1
                 mode_of_operation |= 0x4000;
@@ -72,39 +75,83 @@ unsigned short validargs(int argc, char **argv)
         if(argc >= 3)
         {
             // Second order bit
-            if (validargs_helper(*((argv+2)), 'e'))
+            if (validargs_helper(*((argv+2)), "-e"))
             {
                 //code to flip necessary bits
                 mode_of_operation |= 0x0000;
             }
-            else if (validargs_helper(*((argv+2)), 'd'))
+            else if (validargs_helper(*((argv+2)), "-d"))
             {
                 mode_of_operation |= 0x2000;
 
             }
             //*((argv+1)) +1 moves to next element in argv array NOT string array
         }
-        //If there were more than 3 arguments passed
+        //If there were more than 3 arguments passed check for optional arguments
         if(argc >= 4)
         {
-            if (validargs_helper(*((argv+3)), 'k'))
+            for (optional_arg_pos = 3; optional_arg_pos < argc; optional_arg_pos++)
             {
-                // The argument after this should be the key.
-                // Which can be longer than 2
-                // Need to send it to another function to validate the key
+                if (validargs_helper(*((argv+optional_arg_pos)), "-k"))
+                {
+                    // Code to validate key
+                    // Signal that K was found
+                    printf("%s\n", "KEY");
+                }
+                else if (validargs_helper(*((argv+optional_arg_pos)), "-r") && !r_found)
+                {
+                    // Code to validate rows send it to helper function
+                    // If there is a -r detected, pass the following argument
+                    // and validate that it is correct
+                    row_value = int_validation(*((argv+optional_arg_pos + 1)));
+                    printf("The row value is: %d\n", row_value);
+                     // If the value that was returned was invalid, return 0;
+                    if(row_value == 0)
+                    {
+                        mode_of_operation = 0x0000;
+                        printf("Mode is :%d\n", mode_of_operation);
+                        return mode_of_operation;
+                    }
+                    else // Flip the necessaey bits
+                    {
+                        // Multiply by 16 to "shift" to high end
+                        row_value *= 16;
+                        mode_of_operation |= row_value;
+                        printf("The value of mode is: 0x%x\n", mode_of_operation);
+                    }
+
+                    // Signal that rows was found
+                    r_found++;
+
+                }
+                else if (validargs_helper(*((argv+optional_arg_pos)), "-c"))
+                {
+                    // Code to validate columns
+                    // Signal that columns was found
+                    col_value = int_validation(*((argv+optional_arg_pos + 1)));
+                    printf("The column value is: %d\n", col_value);
+                     // If the value that was returned was invalid, return 0;
+                    if(col_value == 0)
+                    {
+                        mode_of_operation = 0x0000;
+                        printf("Mode is :%d\n", mode_of_operation);
+                        return mode_of_operation;
+                    }
+                    else // Flip the necessaey bits
+                    {
+                        // OR with mode_of_operations
+                        mode_of_operation |= col_value;
+                        printf("The value of mode is: 0x%x\n", mode_of_operation);
+                    }
+
+                    // Signal that rows was found
+                    c_found++;
+                }
 
             }
-            else if (validargs_helper(*((argv+3)), 'r'))
-            {
-                // This means that the arguments that follows is the
-                // Numer of rows
 
-            }
-            else if (validargs_helper(*((argv+3)), 'c'))
-            {
-                // This means that the arguments that follows should
-                // be the number of columns
-            }
+            // If I reach this point I should set default values for rows and columns
+
         }
     }
 
@@ -114,41 +161,54 @@ unsigned short validargs(int argc, char **argv)
 
 /**
  * The validargs_helper function is passed an arugment of a pointer
- * to an array of chars (aka a string) As well as a single char to check whether
- * the array of chars contains the char_to_check
+ * to an array of chars (aka a string) As well as a string to check whether
+ * the array of chars and *str_to_check are equal
  *
- * The loop cycles through the array, checking each element with the element
+ * The loop cycles through both arrays, checking each element with the element
  * that we are looking for to see there is a match.
  *
  * If there is a match the fucntion will return 1
  * Otherwise it will return 0 for false
  */
-int validargs_helper(char *arguments , char char_to_check)
+int validargs_helper(char *arguments , char *str_to_check)
 {
     //this refereces the p
     //arguments+2  the +2 moves over to the next pointer ie the next element in the argv array
     //*(*(arguments+2)+1)) the +1 means to look at the next element in the string array
     //printf("%c\n", *(*(arguments+2)+1));
-
-
-    while(*arguments != '\0')
+    while(*arguments == *str_to_check)
     {
-        if(char_to_check == *arguments)
-            return 1;
-        else
-            arguments++;
+        if(*arguments == '\0' || *str_to_check == '\0')
+            break;
+
+        arguments++;
+        str_to_check++;
     }
 
-    return 0;
+    if (*arguments == '\0' && *str_to_check == '\0')
+        return 1; // TRUE
+    else
+        return 0; // FALSE
 }
 
-/**
- * The validate_key function is used as a helper function to  validargs
- * This function is passed the argument  following the -k command and will
- * check whether the key meets  the requirements and will return 1 to indicate
- * that it does or return 0 to indicate that the key is not valid
- */
-int validate_key(char *key)
+//int validation
+int int_validation(char *int_str)
 {
+    int int_to_check;
 
+    int_to_check = atoi(int_str);
+    printf("The number that was converted from a String: %d\n", int_to_check);
+    // If the return value of atoi does not indicate a number return 0
+    if (int_to_check == 0)
+    {
+        return 0;
+    }
+    else if(int_to_check < 9 || int_to_check > 15) // Check if its in the right bounds
+    {
+        return 0;
+    }
+
+    // Return the into to the function.
+    return int_to_check;
 }
+

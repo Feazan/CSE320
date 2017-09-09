@@ -40,7 +40,7 @@ unsigned short validargs(int argc, char **argv)
     int k_found = 0;
     int r_found = 0;
     int c_found = 0;
-    int row_value = 10;
+    int row_value = 160;
     int col_value = 10;
 
     // If there are not enough arguments
@@ -70,6 +70,10 @@ unsigned short validargs(int argc, char **argv)
                 //OR the second highest order bit with 1
                 mode_of_operation |= 0x4000;
             }
+            else
+            {
+                mode_of_operation = 0x0000;
+            }
         }
         // If there were more than 2 arguments passed
         if(argc >= 3)
@@ -85,6 +89,10 @@ unsigned short validargs(int argc, char **argv)
                 mode_of_operation |= 0x2000;
 
             }
+            else
+            {
+                mode_of_operation = 0x0000;
+            }
             //*((argv+1)) +1 moves to next element in argv array NOT string array
         }
         //If there were more than 3 arguments passed check for optional arguments
@@ -98,8 +106,17 @@ unsigned short validargs(int argc, char **argv)
                     // Signal that K was found
                     printf("%s\n", "KEY");
                 }
-                else if (validargs_helper(*((argv+optional_arg_pos)), "-r") && !r_found)
+                else if (validargs_helper(*((argv+optional_arg_pos)), "-r"))
                 {
+                    // Signal that rows was found
+                    r_found++;
+
+                    if (r_found > 1)
+                    {
+                        mode_of_operation = 0x0000;
+                        printf("Mode is :%d\n", mode_of_operation);
+                        return mode_of_operation;
+                    }
                     // Code to validate rows send it to helper function
                     // If there is a -r detected, pass the following argument
                     // and validate that it is correct
@@ -120,12 +137,18 @@ unsigned short validargs(int argc, char **argv)
                         printf("The value of mode is: 0x%x\n", mode_of_operation);
                     }
 
-                    // Signal that rows was found
-                    r_found++;
-
                 }
                 else if (validargs_helper(*((argv+optional_arg_pos)), "-c"))
                 {
+                    // Signal that rows was found
+                    c_found++;
+
+                    if (c_found > 1)
+                    {
+                        mode_of_operation = 0x0000;
+                        printf("Mode is :%d\n", mode_of_operation);
+                        return mode_of_operation;
+                    }
                     // Code to validate columns
                     // Signal that columns was found
                     col_value = int_validation(*((argv+optional_arg_pos + 1)));
@@ -143,16 +166,13 @@ unsigned short validargs(int argc, char **argv)
                         mode_of_operation |= col_value;
                         printf("The value of mode is: 0x%x\n", mode_of_operation);
                     }
-
-                    // Signal that rows was found
-                    c_found++;
                 }
 
             }
-
-            // If I reach this point I should set default values for rows and columns
-
         }
+            // If I reach this point I should set default values for rows and columns
+            mode_of_operation |= row_value;
+            mode_of_operation |= col_value;
     }
 
     printf("The mode of operation is: 0x%x\n", mode_of_operation);
@@ -196,6 +216,7 @@ int int_validation(char *int_str)
 {
     int int_to_check;
 
+    // Turn string to int
     int_to_check = atoi(int_str);
     printf("The number that was converted from a String: %d\n", int_to_check);
     // If the return value of atoi does not indicate a number return 0

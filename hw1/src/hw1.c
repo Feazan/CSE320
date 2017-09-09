@@ -17,6 +17,7 @@
 
 int validargs_helper(char *arguments , char *str_to_check);
 int int_validation(char *int_str);
+int key_validation(char *key_str);
 
 /**
  * @brief Validates command line arguments passed to the program.
@@ -48,10 +49,14 @@ unsigned short validargs(int argc, char **argv)
     {
         printf("%s\n", "Incorrect Number of Arguments");
         // Could possibly return EXIT_FAILURE message
-        return mode_of_operation;
+        return 0x8000;
     }
     else
     {
+        if (argc == 2 && !validargs_helper(*((argv+1)), "-h"))
+        {
+            return 0x0000;
+        }
         // If  there were more than one argument passed
         if(argc >= 2)
         {
@@ -72,7 +77,7 @@ unsigned short validargs(int argc, char **argv)
             }
             else
             {
-                mode_of_operation = 0x0000;
+                return mode_of_operation = 0x0000;
             }
         }
         // If there were more than 2 arguments passed
@@ -91,7 +96,7 @@ unsigned short validargs(int argc, char **argv)
             }
             else
             {
-                mode_of_operation = 0x0000;
+                return mode_of_operation = 0x0000;
             }
             //*((argv+1)) +1 moves to next element in argv array NOT string array
         }
@@ -104,6 +109,7 @@ unsigned short validargs(int argc, char **argv)
                 {
                     // Code to validate key
                     // Signal that K was found
+                    k_found++;
                     printf("%s\n", "KEY");
                 }
                 else if (validargs_helper(*((argv+optional_arg_pos)), "-r"))
@@ -120,7 +126,7 @@ unsigned short validargs(int argc, char **argv)
                     // Code to validate rows send it to helper function
                     // If there is a -r detected, pass the following argument
                     // and validate that it is correct
-                    row_value = int_validation(*((argv+optional_arg_pos + 1)));
+                    row_value = int_validation(*((argv + optional_arg_pos + 1)));
                     printf("The row value is: %d\n", row_value);
                      // If the value that was returned was invalid, return 0;
                     if(row_value == 0)
@@ -167,12 +173,17 @@ unsigned short validargs(int argc, char **argv)
                         printf("The value of mode is: 0x%x\n", mode_of_operation);
                     }
                 }
-
+                else if (!k_found && !r_found && !c_found)
+                    return mode_of_operation = 0x0000;
             }
         }
+
+        if(argc >= 3)
+        {
             // If I reach this point I should set default values for rows and columns
             mode_of_operation |= row_value;
             mode_of_operation |= col_value;
+        }
     }
 
     printf("The mode of operation is: 0x%x\n", mode_of_operation);
@@ -211,7 +222,7 @@ int validargs_helper(char *arguments , char *str_to_check)
         return 0; // FALSE
 }
 
-//int validation
+// Int validation
 int int_validation(char *int_str)
 {
     int int_to_check;
@@ -231,5 +242,12 @@ int int_validation(char *int_str)
 
     // Return the into to the function.
     return int_to_check;
+}
+
+// Key helper
+int key_validation(char *key_str)
+{
+    return 0;
+
 }
 

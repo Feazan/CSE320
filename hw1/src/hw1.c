@@ -17,7 +17,10 @@
 
 int validargs_helper(char *arguments , char *str_to_check);
 int int_validation(char *int_str);
-int key_validation(char *key_str);
+int array_length(char *key_str);
+int key_validation(char *key_str, int count);
+int cipher_check(char *key_str, char cipher);
+
 
 /**
  * @brief Validates command line arguments passed to the program.
@@ -41,8 +44,14 @@ unsigned short validargs(int argc, char **argv)
     int k_found = 0;
     int r_found = 0;
     int c_found = 0;
+    int p_found = 0;
+    int f_found = 0;
     int row_value = 160;
     int col_value = 10;
+    int number_of_elements = 0;
+    int is_key_valid = 0;
+    char cipher_mode;
+    int cipher_check_int = 0;
 
     // If there are not enough arguments
     if (argc <= 1 || argc > MAXVALUE)
@@ -66,12 +75,14 @@ unsigned short validargs(int argc, char **argv)
                 return 0x8000;
             else if (validargs_helper(*((argv+1)), "-p"))
             {
+                p_found++;
                 //OR the second highest order bit with 0
                 mode_of_operation |= 0x0000;
             }
             // This will check if there are more arguments to check
             else if (validargs_helper(*((argv+1)), "-f"))
             {
+                f_found++;
                 //OR the second highest order bit with 1
                 mode_of_operation |= 0x4000;
             }
@@ -110,7 +121,49 @@ unsigned short validargs(int argc, char **argv)
                     // Code to validate key
                     // Signal that K was found
                     k_found++;
-                    printf("%s\n", "KEY");
+                    if (p_found)
+                    {
+                        cipher_mode = 'p';
+                    }
+                    else if (f_found)
+                    {
+                        cipher_mode = 'f';
+                    }
+
+                    // Pass cipher_mode to cipher_check if it returns true
+                    cipher_check_int = cipher_check(*((argv + optional_arg_pos + 1)), cipher_mode);
+                    if (cipher_check_int == 1)
+                    {
+                        // If it was in bounds, set the count for the number of elements
+                        number_of_elements = array_length(*((argv + optional_arg_pos + 1)));
+                        // Check for repeats
+                        is_key_valid = key_validation(*((argv + optional_arg_pos + 1)), number_of_elements);
+                    }
+                    else
+                    {
+                        return mode_of_operation = 0x0000;
+                    }
+
+                    if (is_key_valid == 1 && cipher_mode == 'p')
+                    {
+                        // Store the key in the -p variable
+                        printf("%s\n", "STORE IN -p VARIABLE");
+                        // TODO: Find out if this is the correct way to store the variable
+                        key = *((argv + optional_arg_pos + 1));
+                    }
+                    else if (is_key_valid == 1 && cipher_mode == 'f')
+                    {
+                        // Store the key in the -f variable
+                        printf("%s\n", "STORE IN -f VARIABLE");
+                        // TODO: Find out if this is the correct way to store the variable
+                        key = *((argv + optional_arg_pos + 1));
+                    }
+                    else if (is_key_valid == 0)
+                    {
+                        printf("%s\n", "KEY IS INVALID");
+                        return mode_of_operation = 0x0000;
+                    }
+
                 }
                 else if (validargs_helper(*((argv+optional_arg_pos)), "-r"))
                 {
@@ -245,9 +298,52 @@ int int_validation(char *int_str)
 }
 
 // Key helper
-int key_validation(char *key_str)
+int array_length(char *key_str)
 {
-    return 0;
+    int num_elements = 0;
+    while(*key_str != '\0')
+    {
+        num_elements++;
+        key_str++;
+    }
+    return num_elements;
+}
 
+// cipher mode helper
+int cipher_check(char *key_str, char cipher)
+{
+    while(*key_str != '\0')
+    {
+        if (cipher == 'p')
+        {
+            if (*key_str < 33 || *key_str > 126)
+                return 0; // Out of bound for polybus cipher
+        }
+        if (cipher == 'f')
+        {
+            if (*key_str < 65 || *key_str > 90)
+            {
+                printf("%s\n", "INVALID KEY");
+                return 0; // Out of bound for morse code cipher
+            }
+        }
+        key_str++;
+    }
+    return 1; // If this point is reached the keys are in bounds
+}
+
+// Key validation
+int key_validation(char *key_str, int count)
+{
+    for(int i = 0; i < count; i++) {
+        for(int j = i + 1; j < count; j++)
+        {
+            if (*(key_str + i) == *(key_str + j))
+            {
+                return 0; // FAILED VALIDATION
+            }
+        }
+    }
+    return 1; // PASSED VALIDATION
 }
 

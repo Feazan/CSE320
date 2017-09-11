@@ -26,6 +26,12 @@ int main(int argc, char **argv)
     if(mode & 0x8000) {
         USAGE(*argv, EXIT_SUCCESS);
     }
+    else if(mode & 0x00AA)
+    {
+        printf("%s\n", "Polybius Cipher");
+        polybius(mode);
+        return EXIT_SUCCESS;
+    }
 
     return EXIT_SUCCESS;
 }

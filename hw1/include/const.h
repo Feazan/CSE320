@@ -34,6 +34,8 @@ extern const char *key;
  */
 unsigned short validargs(int argc, char **argv);
 
+void polybius(unsigned short mode);
+
 #define USAGE(program_name, retcode) do{                                                        \
 fprintf(stderr, "USAGE: %s %s\n", program_name,                                                         \
 "[-h] -p|-f -e|-d [-k KEY] [-r ROWS] [-c COLUMNS]\n" \

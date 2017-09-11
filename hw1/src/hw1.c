@@ -147,20 +147,17 @@ unsigned short validargs(int argc, char **argv)
                     if (is_key_valid == 1 && cipher_mode == 'p')
                     {
                         // Store the key in the -p variable
-                        printf("%s\n", "STORE IN -p VARIABLE");
                         // TODO: Find out if this is the correct way to store the variable
                         key = *((argv + optional_arg_pos + 1));
                     }
                     else if (is_key_valid == 1 && cipher_mode == 'f')
                     {
                         // Store the key in the -f variable
-                        printf("%s\n", "STORE IN -f VARIABLE");
                         // TODO: Find out if this is the correct way to store the variable
                         key = *((argv + optional_arg_pos + 1));
                     }
                     else if (is_key_valid == 0)
                     {
-                        printf("%s\n", "KEY IS INVALID");
                         return mode_of_operation = 0x0000;
                     }
 
@@ -173,19 +170,16 @@ unsigned short validargs(int argc, char **argv)
                     if (r_found > 1)
                     {
                         mode_of_operation = 0x0000;
-                        printf("Mode is :%d\n", mode_of_operation);
                         return mode_of_operation;
                     }
                     // Code to validate rows send it to helper function
                     // If there is a -r detected, pass the following argument
                     // and validate that it is correct
                     row_value = int_validation(*((argv + optional_arg_pos + 1)));
-                    printf("The row value is: %d\n", row_value);
                      // If the value that was returned was invalid, return 0;
                     if(row_value == 0)
                     {
                         mode_of_operation = 0x0000;
-                        printf("Mode is :%d\n", mode_of_operation);
                         return mode_of_operation;
                     }
                     else // Flip the necessaey bits
@@ -193,7 +187,6 @@ unsigned short validargs(int argc, char **argv)
                         // Multiply by 16 to "shift" to high end
                         row_value *= 16;
                         mode_of_operation |= row_value;
-                        printf("The value of mode is: 0x%x\n", mode_of_operation);
                     }
 
                 }
@@ -205,25 +198,21 @@ unsigned short validargs(int argc, char **argv)
                     if (c_found > 1)
                     {
                         mode_of_operation = 0x0000;
-                        printf("Mode is :%d\n", mode_of_operation);
                         return mode_of_operation;
                     }
                     // Code to validate columns
                     // Signal that columns was found
                     col_value = int_validation(*((argv+optional_arg_pos + 1)));
-                    printf("The column value is: %d\n", col_value);
                      // If the value that was returned was invalid, return 0;
                     if(col_value == 0)
                     {
                         mode_of_operation = 0x0000;
-                        printf("Mode is :%d\n", mode_of_operation);
                         return mode_of_operation;
                     }
                     else // Flip the necessaey bits
                     {
                         // OR with mode_of_operations
                         mode_of_operation |= col_value;
-                        printf("The value of mode is: 0x%x\n", mode_of_operation);
                     }
                 }
                 else if (!k_found && !r_found && !c_found)
@@ -282,7 +271,6 @@ int int_validation(char *int_str)
 
     // Turn string to int
     int_to_check = atoi(int_str);
-    printf("The number that was converted from a String: %d\n", int_to_check);
     // If the return value of atoi does not indicate a number return 0
     if (int_to_check == 0)
     {
@@ -323,7 +311,6 @@ int cipher_check(char *key_str, char cipher)
         {
             if (*key_str < 65 || *key_str > 90)
             {
-                printf("%s\n", "INVALID KEY");
                 return 0; // Out of bound for morse code cipher
             }
         }

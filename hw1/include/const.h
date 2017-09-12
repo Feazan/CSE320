@@ -35,6 +35,7 @@ extern const char *key;
 unsigned short validargs(int argc, char **argv);
 
 void polybius(unsigned short mode);
+int array_length(char *key_str);
 
 #define USAGE(program_name, retcode) do{                                                        \
 fprintf(stderr, "USAGE: %s %s\n", program_name,                                                         \

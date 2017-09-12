@@ -17,7 +17,6 @@
 
 int validargs_helper(char *arguments , char *str_to_check);
 int int_validation(char *int_str);
-int array_length(char *key_str);
 int key_validation(char *key_str, int count);
 int cipher_check(char *key_str, char cipher);
 

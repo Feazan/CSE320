@@ -7,6 +7,9 @@ void key_insert_to_table(char *the_table ,const char *the_key);
 int contains(const char *str, char char_to_check);
 void alpha_after_key_insert(const char *key_for_contains, char *the_table ,char *the_alphabet, int key_length, int alpha_length);
 void insert_nulls(char *a_table, int where_to_start);
+void user_input();
+int encrypt_rows(char *polybius_encryption_table, char p, int cols);
+int encrypt_columns(char *polybius_encryption_table, char p, int cols);
 
 void polybius(unsigned short mode)
 {
@@ -45,10 +48,11 @@ void polybius(unsigned short mode)
         alpha_after_key_insert(key, polybius_table, polybius_alphabet, length_of_key, length_of_table);
         insert_nulls(polybius_table, length_of_table);
         printf("FULL TABLE AFTER KEY INSERT: %s\n", polybius_table);
-
     }
 
     // Now I think I should get the users input
+    user_input(polybius_table, columns);
+
 
 
 
@@ -131,3 +135,79 @@ void insert_nulls(char *a_table, int where_to_start)
     }
 
 }
+
+// Take user input
+void user_input(char *the_polybius_encryption_table, int the_cols)
+{
+    char c;
+    while((c = getchar()) != EOF)
+    {
+        if(c == '\n')
+            printf("\n");
+        else
+        {
+            printf("%X%X", encrypt_rows(the_polybius_encryption_table, c, the_cols),
+            encrypt_columns(the_polybius_encryption_table, c, the_cols));
+        }
+    }
+}
+
+// Encryption method, takes char p for polybius
+int encrypt_rows(char *polybius_encryption_table, char p, int cols)
+{
+    int i = 0;
+    int encrypted_row = 0;
+    while (*polybius_encryption_table != '\0')
+    {
+        if(p == *polybius_encryption_table)
+        {
+            encrypted_row = i/cols;
+            return  encrypted_row;
+        }
+        else
+        {
+            polybius_encryption_table++;
+            i++;
+        }
+    }
+    return encrypted_row;
+}
+
+int encrypt_columns(char *polybius_encryption_table, char p, int cols)
+{
+    int i = 0;
+    int encrypted_columns = 0;
+    while (*polybius_encryption_table != '\0')
+    {
+        if(p == *polybius_encryption_table)
+        {
+            encrypted_columns = i%cols;
+            return  encrypted_columns;
+        }
+        else
+        {
+            polybius_encryption_table++;
+            i++;
+        }
+    }
+    return encrypted_columns;
+}
+
+
+/*
+WITH KEY
+
+MY OUTPUT -       37 53 39 03 04 05 90 92
+EXPECTED OUTPUT - 37 53 39 03 04 05 90 92
+
+
+*/
+
+
+/*
+WITHOUT KEY
+
+MY OUTPUT -       375540201816A0A2
+EXPECTED OUTPUT - 375540201816A0A2
+
+*/

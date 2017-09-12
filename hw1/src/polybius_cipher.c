@@ -6,6 +6,7 @@ int key_length(const char *key_arg);
 void key_insert_to_table(char *the_table ,const char *the_key);
 int contains(const char *str, char char_to_check);
 void alpha_after_key_insert(const char *key_for_contains, char *the_table ,char *the_alphabet, int key_length, int alpha_length);
+void insert_nulls(char *a_table, int where_to_start);
 
 void polybius(unsigned short mode)
 {
@@ -23,6 +24,7 @@ void polybius(unsigned short mode)
     if (key == NULL)
     {
         insert(polybius_table, polybius_alphabet, length_of_table);
+        insert_nulls(polybius_table, length_of_table);
         printf("NO KEY DETECTED :%s\n", polybius_table);
     }
     else
@@ -41,6 +43,7 @@ void polybius(unsigned short mode)
 
         // Need method for not inserting the rest of the table
         alpha_after_key_insert(key, polybius_table, polybius_alphabet, length_of_key, length_of_table);
+        insert_nulls(polybius_table, length_of_table);
         printf("FULL TABLE AFTER KEY INSERT: %s\n", polybius_table);
 
     }
@@ -117,4 +120,14 @@ void alpha_after_key_insert(const char *key_for_contains, char *the_table ,char 
         }
         the_alphabet++;
     }
+}
+
+// Method for inserting nulls into the table
+void insert_nulls(char *a_table, int where_to_start)
+{
+    for(int i = where_to_start; i < 257; i++)
+    {
+        *(a_table + i) = '\0';
+    }
+
 }

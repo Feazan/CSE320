@@ -144,6 +144,10 @@ void user_input(char *the_polybius_encryption_table, int the_cols)
     {
         if(c == '\n')
             printf("\n");
+        else if (c == 32)
+            printf(" ");
+        else if (c == '\t')
+            printf("\t");
         else
         {
             printf("%X%X", encrypt_rows(the_polybius_encryption_table, c, the_cols),

@@ -11,7 +11,7 @@ void user_input();
 int encrypt_rows(char *polybius_encryption_table, char p, int cols);
 int encrypt_columns(char *polybius_encryption_table, char p, int cols);
 
-void polybius(unsigned short mode)
+void encrypt_polybius(unsigned short mode)
 {
     int length_of_key = 0;
     int length_of_table = 0;
@@ -52,10 +52,6 @@ void polybius(unsigned short mode)
 
     // Now I think I should get the users input
     user_input(polybius_table, columns);
-
-
-
-
 }
 
 // Copy the string from the alphabet to the source for a particular row*column length

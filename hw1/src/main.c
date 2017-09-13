@@ -28,8 +28,8 @@ int main(int argc, char **argv)
     }
     else if(mode & 0x00AA)
     {
-        printf("%s\n", "Polybius Cipher");
-        polybius(mode);
+        printf("%s\n", "Polybius Encryption");
+        encrypt_polybius(mode);
         return EXIT_SUCCESS;
     }
 

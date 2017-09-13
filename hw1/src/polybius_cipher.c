@@ -7,7 +7,8 @@ void key_insert_to_table(char *the_table ,const char *the_key);
 int contains(const char *str, char char_to_check);
 void alpha_after_key_insert(const char *key_for_contains, char *the_table ,char *the_alphabet, int key_length, int alpha_length);
 void insert_nulls(char *a_table, int where_to_start);
-void user_input();
+void user_input_encrypt(char *the_polybius_encryption_table, int the_cols);
+void user_input_decrypt(char *the_polybius_decryption_table, int table_column);
 int encrypt_rows(char *polybius_encryption_table, char p, int cols);
 int encrypt_columns(char *polybius_encryption_table, char p, int cols);
 
@@ -51,7 +52,50 @@ void encrypt_polybius(unsigned short mode)
     }
 
     // Now I think I should get the users input
-    user_input(polybius_table, columns);
+    user_input_encrypt(polybius_table, columns);
+}
+
+void decrypt_polybius(unsigned short mode)
+{
+    printf("%s\n", "HELLOOOOOOOOOOOO");
+    int length_of_key = 0;
+    int length_of_table = 0;
+    // Parse the columns and rows from the mode
+    unsigned short rows = mode & 0x00F0;
+    unsigned short columns = mode & 0x000F;
+    rows = (mode >> 4) & 0xFF;
+    printf("Num Rows: 0x%x\n", rows);
+    printf("Num Columns: 0x%x\n", columns);
+    length_of_table = rows * columns;
+
+    // Reconstructing the table
+    if (key == NULL)
+    {
+        insert(polybius_table, polybius_alphabet, length_of_table);
+        insert_nulls(polybius_table, length_of_table);
+        printf("NO KEY DETECTED :%s\n", polybius_table);
+    }
+    else
+    {
+        // Find the length
+        length_of_key = key_length(key);
+        //length_of_table = array_length(polybius_alphabet);
+        printf("Length of alphabet: %d\n", length_of_table);
+        printf("The length of the key is: %d\n", length_of_key);
+
+        printf("THE ALPHABET: %s\n", polybius_alphabet);
+
+        // Insert the key into the table
+        key_insert_to_table(polybius_table, key);
+        printf("THE TABLE AFTER KEY INSERT: %s\n", polybius_table);
+
+        // Need method for not inserting the rest of the table
+        alpha_after_key_insert(key, polybius_table, polybius_alphabet, length_of_key, length_of_table);
+        insert_nulls(polybius_table, length_of_table);
+        printf("FULL TABLE AFTER KEY INSERT: %s\n", polybius_table);
+    }
+
+    user_input_decrypt(polybius_table, columns);
 }
 
 // Copy the string from the alphabet to the source for a particular row*column length
@@ -133,7 +177,7 @@ void insert_nulls(char *a_table, int where_to_start)
 }
 
 // Take user input
-void user_input(char *the_polybius_encryption_table, int the_cols)
+void user_input_encrypt(char *the_polybius_encryption_table, int the_cols)
 {
     char c;
     while((c = getchar()) != EOF)
@@ -147,7 +191,7 @@ void user_input(char *the_polybius_encryption_table, int the_cols)
         else
         {
             printf("%X%X", encrypt_rows(the_polybius_encryption_table, c, the_cols),
-            encrypt_columns(the_polybius_encryption_table, c, the_cols));
+                encrypt_columns(the_polybius_encryption_table, c, the_cols));
         }
     }
 }
@@ -191,6 +235,102 @@ int encrypt_columns(char *polybius_encryption_table, char p, int cols)
         }
     }
     return encrypted_columns;
+}
+
+void user_input_decrypt(char *the_polybius_decryption_table, int table_column)
+{
+    int index_value = 0;
+    int given_row = 0;
+    int given_column = 0;
+    int even_odd = 1;
+    char c;
+    while((c = getchar()) != EOF)
+    {
+        if(c == '\n')
+            printf("\n");
+        else if (c == 32)
+            printf(" ");
+        else if (c == '\t')
+            printf("\t");
+        else if ((even_odd % 2) != 0) // Meaning its odd
+        {
+            if (c == 'A')
+            {
+                given_row = 10;
+                even_odd++;
+            }
+            else if (c == 'B')
+            {
+                given_row = 11;
+                even_odd++;
+            }
+            else if (c == 'C')
+            {
+                given_row = 12;
+                even_odd++;
+            }
+            else if (c == 'D')
+            {
+                given_row = 13;
+                even_odd++;
+            }
+            else if (c == 'E')
+            {
+                given_row = 14;
+                even_odd++;
+            }
+            else if (c == 'F')
+            {
+                given_row = 15;
+                even_odd++;
+            }
+            else
+            {
+                given_row = (c - '0');
+                even_odd++;
+            }
+        }
+        else
+        {
+            if (c == 'A')
+            {
+                given_column = 10;
+                even_odd++;
+            }
+            else if (c == 'B')
+            {
+                given_column = 11;
+                even_odd++;
+            }
+            else if (c == 'C')
+            {
+                given_column = 12;
+                even_odd++;
+            }
+            else if (c == 'D')
+            {
+                given_column = 13;
+                even_odd++;
+            }
+            else if (c == 'E')
+            {
+                given_column = 14;
+                even_odd++;
+            }
+            else if (c == 'F')
+            {
+                given_column = 15;
+                even_odd++;
+            }
+            else
+            {
+                given_column = (c - '0');
+                even_odd++;
+                index_value = (given_row * table_column) + given_column;
+                printf("%c", *(the_polybius_decryption_table + index_value));
+            }
+        }
+    }
 }
 
 

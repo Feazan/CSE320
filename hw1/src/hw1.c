@@ -227,7 +227,6 @@ unsigned short validargs(int argc, char **argv)
         }
     }
 
-    printf("The mode of operation is: 0x%x\n", mode_of_operation);
     return mode_of_operation;
 }
 

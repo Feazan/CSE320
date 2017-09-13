@@ -20,8 +20,6 @@ void encrypt_polybius(unsigned short mode)
     unsigned short rows = mode & 0x00F0;
     unsigned short columns = mode & 0x000F;
     rows = (mode >> 4) & 0xFF;
-    printf("Num Rows: 0x%x\n", rows);
-    printf("Num Columns: 0x%x\n", columns);
     length_of_table = rows * columns;
 
     // Lets just assume no key was passed
@@ -29,26 +27,18 @@ void encrypt_polybius(unsigned short mode)
     {
         insert(polybius_table, polybius_alphabet, length_of_table);
         insert_nulls(polybius_table, length_of_table);
-        printf("NO KEY DETECTED :%s\n", polybius_table);
     }
     else
     {
         // Find the length
         length_of_key = key_length(key);
-        //length_of_table = array_length(polybius_alphabet);
-        printf("Length of alphabet: %d\n", length_of_table);
-        printf("The length of the key is: %d\n", length_of_key);
-
-        printf("THE ALPHABET: %s\n", polybius_alphabet);
 
         // Insert the key into the table
         key_insert_to_table(polybius_table, key);
-        printf("THE TABLE AFTER KEY INSERT: %s\n", polybius_table);
 
         // Need method for not inserting the rest of the table
         alpha_after_key_insert(key, polybius_table, polybius_alphabet, length_of_key, length_of_table);
         insert_nulls(polybius_table, length_of_table);
-        printf("FULL TABLE AFTER KEY INSERT: %s\n", polybius_table);
     }
 
     // Now I think I should get the users input
@@ -57,15 +47,12 @@ void encrypt_polybius(unsigned short mode)
 
 void decrypt_polybius(unsigned short mode)
 {
-    printf("%s\n", "HELLOOOOOOOOOOOO");
     int length_of_key = 0;
     int length_of_table = 0;
     // Parse the columns and rows from the mode
     unsigned short rows = mode & 0x00F0;
     unsigned short columns = mode & 0x000F;
     rows = (mode >> 4) & 0xFF;
-    printf("Num Rows: 0x%x\n", rows);
-    printf("Num Columns: 0x%x\n", columns);
     length_of_table = rows * columns;
 
     // Reconstructing the table
@@ -73,26 +60,18 @@ void decrypt_polybius(unsigned short mode)
     {
         insert(polybius_table, polybius_alphabet, length_of_table);
         insert_nulls(polybius_table, length_of_table);
-        printf("NO KEY DETECTED :%s\n", polybius_table);
     }
     else
     {
         // Find the length
         length_of_key = key_length(key);
-        //length_of_table = array_length(polybius_alphabet);
-        printf("Length of alphabet: %d\n", length_of_table);
-        printf("The length of the key is: %d\n", length_of_key);
-
-        printf("THE ALPHABET: %s\n", polybius_alphabet);
 
         // Insert the key into the table
         key_insert_to_table(polybius_table, key);
-        printf("THE TABLE AFTER KEY INSERT: %s\n", polybius_table);
 
         // Need method for not inserting the rest of the table
         alpha_after_key_insert(key, polybius_table, polybius_alphabet, length_of_key, length_of_table);
         insert_nulls(polybius_table, length_of_table);
-        printf("FULL TABLE AFTER KEY INSERT: %s\n", polybius_table);
     }
 
     user_input_decrypt(polybius_table, columns);

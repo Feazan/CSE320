@@ -227,6 +227,9 @@ unsigned short validargs(int argc, char **argv)
                 }
                 else if (!k_found && !r_found && !c_found)
                 {
+
+                    printf("%s\n", "WHY ARE YOU HERE");
+                    printf("%s\n", *((argv+optional_arg_pos)));
                     mode_of_operation = 0x0000;
                     return EXIT_FAILURE;
                 }

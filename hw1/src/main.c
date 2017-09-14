@@ -20,6 +20,10 @@ int main(int argc, char **argv)
     unsigned short mode;
 
     mode = validargs(argc, argv);
+    if (mode == 0)
+    {
+        EXIT_FAILURE;
+    }
 
     debug("Mode: 0x%X", mode);
 

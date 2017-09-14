@@ -60,7 +60,7 @@ unsigned short validargs(int argc, char **argv)
     {
         if (argc == 2 && !validargs_helper(*((argv+1)), "-h"))
         {
-            return EXIT_FAILURE;
+            return mode_of_operation = 0x0000;
         }
         // If  there were more than one argument passed
         if(argc >= 2)
@@ -84,8 +84,7 @@ unsigned short validargs(int argc, char **argv)
             }
             else
             {
-                mode_of_operation = 0x0000;
-                return EXIT_FAILURE;
+                return mode_of_operation = 0x0000;
             }
         }
         // If there were more than 2 arguments passed
@@ -104,8 +103,7 @@ unsigned short validargs(int argc, char **argv)
             }
             else
             {
-                mode_of_operation = 0x0000;
-                return EXIT_FAILURE;
+                return mode_of_operation = 0x0000;
             }
             //*((argv+1)) +1 moves to next element in argv array NOT string array
         }
@@ -116,6 +114,8 @@ unsigned short validargs(int argc, char **argv)
             {
                 if (validargs_helper(*((argv+optional_arg_pos)), "-k"))
                 {
+                    // Move to following index
+                    optional_arg_pos++;
                     // Code to validate key
                     // Signal that K was found
                     k_found++;
@@ -129,62 +129,60 @@ unsigned short validargs(int argc, char **argv)
                     }
 
                     // Pass cipher_mode to cipher_check if it returns true
-                    cipher_check_int = cipher_check(*((argv + optional_arg_pos + 1)), cipher_mode);
+                    cipher_check_int = cipher_check(*((argv + optional_arg_pos)), cipher_mode);
                     if (cipher_check_int == 1)
                     {
                         // If it was in bounds, set the count for the number of elements
-                        number_of_elements = array_length(*((argv + optional_arg_pos + 1)));
+                        number_of_elements = array_length(*((argv + optional_arg_pos)));
                         // Check for repeats
-                        is_key_valid = key_validation(*((argv + optional_arg_pos + 1)), number_of_elements);
+                        is_key_valid = key_validation(*((argv + optional_arg_pos)), number_of_elements);
                     }
                     else
                     {
-                        mode_of_operation = 0x0000;
-                        return EXIT_FAILURE;
+                        return mode_of_operation = 0x0000;
                     }
 
                     if (is_key_valid == 1 && cipher_mode == 'p')
                     {
                         // Store the key in the -p variable
                         // TODO: Find out if this is the correct way to store the variable
-                        key = *((argv + optional_arg_pos + 1));
+                        key = *((argv + optional_arg_pos));
                     }
                     else if (is_key_valid == 1 && cipher_mode == 'f')
                     {
                         // Store the key in the -f variable
-                        key = *((argv + optional_arg_pos + 1));
+                        key = *((argv + optional_arg_pos));
                     }
                     else if (is_key_valid == 0)
                     {
-                        mode_of_operation = 0x0000;
-                        return EXIT_FAILURE;
+                        return mode_of_operation = 0x0000;
                     }
 
                 }
                 else if (validargs_helper(*((argv+optional_arg_pos)), "-r"))
                 {
-                    // Signal that rows was found
                     if (f_found >= 1)
                     {
-                        mode_of_operation = 0x0000;
-                        return EXIT_FAILURE;
+                        return mode_of_operation = 0x0000;
                     }
+
+                    // Move the index
+                    optional_arg_pos++;
+                    // Signal that rows was found
                     r_found++;
 
                     if (r_found > 1)
                     {
-                        mode_of_operation = 0x0000;
-                        return EXIT_FAILURE;
+                        return mode_of_operation = 0x0000;
                     }
                     // Code to validate rows send it to helper function
                     // If there is a -r detected, pass the following argument
                     // and validate that it is correct
-                    row_value = int_validation(*((argv + optional_arg_pos + 1)));
+                    row_value = int_validation(*((argv + optional_arg_pos)));
                      // If the value that was returned was invalid, return 1;
                     if(row_value == 0)
                     {
-                        mode_of_operation = 0x0000;
-                        return EXIT_FAILURE;
+                        return mode_of_operation = 0x0000;
                     }
                     else // Flip the necessaey bits
                     {
@@ -196,10 +194,11 @@ unsigned short validargs(int argc, char **argv)
                 }
                 else if (validargs_helper(*((argv+optional_arg_pos)), "-c"))
                 {
+                    // Move index over
+                    optional_arg_pos++;
                     if (f_found >= 1)
                     {
-                        mode_of_operation = 0;
-                        return EXIT_FAILURE;
+                        return mode_of_operation = 0;
                     }
 
                     // Signal that rows was found
@@ -207,17 +206,15 @@ unsigned short validargs(int argc, char **argv)
 
                     if (c_found > 1)
                     {
-                        mode_of_operation = 0x0000;
-                        return EXIT_FAILURE;
+                        return mode_of_operation = 0x0000;
                     }
                     // Code to validate columns
                     // Signal that columns was found
-                    col_value = int_validation(*((argv+optional_arg_pos + 1)));
+                    col_value = int_validation(*((argv+optional_arg_pos)));
                      // If the value that was returned was invalid, return 0;
                     if(col_value == 0)
                     {
-                        mode_of_operation = 0x0000;
-                        return EXIT_FAILURE;
+                        return mode_of_operation = 0x0000;
                     }
                     else // Flip the necessaey bits
                     {
@@ -225,13 +222,9 @@ unsigned short validargs(int argc, char **argv)
                         mode_of_operation |= col_value;
                     }
                 }
-                else if (!k_found && !r_found && !c_found)
+                else
                 {
-
-                    printf("%s\n", "WHY ARE YOU HERE");
-                    printf("%s\n", *((argv+optional_arg_pos)));
-                    mode_of_operation = 0x0000;
-                    return EXIT_FAILURE;
+                    return mode_of_operation = 0x0000;
                 }
             }
         }
@@ -244,8 +237,7 @@ unsigned short validargs(int argc, char **argv)
         }
         else
         {
-            mode_of_operation = 0x0000;
-            return EXIT_FAILURE;
+            return mode_of_operation = 0x0000;
         }
     }
 
@@ -288,6 +280,12 @@ int validargs_helper(char *arguments , char *str_to_check)
 // Int validation
 int int_validation(char *int_str)
 {
+    // Check if the int of type String if valid
+    if (array_length(int_str) >= 3)
+    {
+        return 0;
+    }
+
     int int_to_check;
 
     // Turn string to int

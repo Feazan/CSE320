@@ -164,6 +164,11 @@ unsigned short validargs(int argc, char **argv)
                 else if (validargs_helper(*((argv+optional_arg_pos)), "-r"))
                 {
                     // Signal that rows was found
+                    if (f_found >= 1)
+                    {
+                        mode_of_operation = 0x0000;
+                        return EXIT_FAILURE;
+                    }
                     r_found++;
 
                     if (r_found > 1)
@@ -191,6 +196,12 @@ unsigned short validargs(int argc, char **argv)
                 }
                 else if (validargs_helper(*((argv+optional_arg_pos)), "-c"))
                 {
+                    if (f_found >= 1)
+                    {
+                        mode_of_operation = 0;
+                        return EXIT_FAILURE;
+                    }
+
                     // Signal that rows was found
                     c_found++;
 

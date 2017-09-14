@@ -50,16 +50,17 @@ int main(int argc, char **argv)
             decrypt_polybius(mode);
             return EXIT_SUCCESS;
         }
-        else
+        else if (mode & 0x00AA)
         {
             //printf("%s\n", "Polybius Encryption");
             encrypt_polybius(mode);
             return EXIT_SUCCESS;
         }
+        else
+        {
+            return EXIT_FAILURE;
+        }
     }
-
-
-    return EXIT_SUCCESS;
 }
 
 /*

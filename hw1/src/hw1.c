@@ -13,8 +13,6 @@
 #error "Do not #include <ctype.h>. You will get a ZERO."
 #endif
 
-#define MAXVALUE 10
-
 int validargs_helper(char *arguments , char *str_to_check);
 int int_validation(char *int_str);
 int key_validation(char *key_str, int count);
@@ -53,16 +51,16 @@ unsigned short validargs(int argc, char **argv)
     int cipher_check_int = 0;
 
     // If there are not enough arguments
-    if (argc <= 1 || argc > MAXVALUE)
+    if (argc <= 1)
     {
         // Could possibly return EXIT_FAILURE message
-        return 0x8000;
+        USAGE(*argv, EXIT_FAILURE);
     }
     else
     {
         if (argc == 2 && !validargs_helper(*((argv+1)), "-h"))
         {
-            return 0x0000;
+            return EXIT_FAILURE;
         }
         // If  there were more than one argument passed
         if(argc >= 2)
@@ -86,7 +84,8 @@ unsigned short validargs(int argc, char **argv)
             }
             else
             {
-                return mode_of_operation = 0x0000;
+                mode_of_operation = 0x0000;
+                return EXIT_FAILURE;
             }
         }
         // If there were more than 2 arguments passed
@@ -105,12 +104,13 @@ unsigned short validargs(int argc, char **argv)
             }
             else
             {
-                return mode_of_operation = 0x0000;
+                mode_of_operation = 0x0000;
+                return EXIT_FAILURE;
             }
             //*((argv+1)) +1 moves to next element in argv array NOT string array
         }
         //If there were more than 3 arguments passed check for optional arguments
-        if(argc >= 4)
+        if(argc >= 4 && argc < 10)
         {
             for (optional_arg_pos = 3; optional_arg_pos < argc; optional_arg_pos++)
             {
@@ -139,7 +139,8 @@ unsigned short validargs(int argc, char **argv)
                     }
                     else
                     {
-                        return mode_of_operation = 0x0000;
+                        mode_of_operation = 0x0000;
+                        return EXIT_FAILURE;
                     }
 
                     if (is_key_valid == 1 && cipher_mode == 'p')
@@ -151,12 +152,12 @@ unsigned short validargs(int argc, char **argv)
                     else if (is_key_valid == 1 && cipher_mode == 'f')
                     {
                         // Store the key in the -f variable
-                        // TODO: Find out if this is the correct way to store the variable
                         key = *((argv + optional_arg_pos + 1));
                     }
                     else if (is_key_valid == 0)
                     {
-                        return mode_of_operation = 0x0000;
+                        mode_of_operation = 0x0000;
+                        return EXIT_FAILURE;
                     }
 
                 }
@@ -168,17 +169,17 @@ unsigned short validargs(int argc, char **argv)
                     if (r_found > 1)
                     {
                         mode_of_operation = 0x0000;
-                        return mode_of_operation;
+                        return EXIT_FAILURE;
                     }
                     // Code to validate rows send it to helper function
                     // If there is a -r detected, pass the following argument
                     // and validate that it is correct
                     row_value = int_validation(*((argv + optional_arg_pos + 1)));
-                     // If the value that was returned was invalid, return 0;
+                     // If the value that was returned was invalid, return 1;
                     if(row_value == 0)
                     {
                         mode_of_operation = 0x0000;
-                        return mode_of_operation;
+                        return EXIT_FAILURE;
                     }
                     else // Flip the necessaey bits
                     {
@@ -196,7 +197,7 @@ unsigned short validargs(int argc, char **argv)
                     if (c_found > 1)
                     {
                         mode_of_operation = 0x0000;
-                        return mode_of_operation;
+                        return EXIT_FAILURE;
                     }
                     // Code to validate columns
                     // Signal that columns was found
@@ -205,7 +206,7 @@ unsigned short validargs(int argc, char **argv)
                     if(col_value == 0)
                     {
                         mode_of_operation = 0x0000;
-                        return mode_of_operation;
+                        return EXIT_FAILURE;
                     }
                     else // Flip the necessaey bits
                     {
@@ -214,15 +215,23 @@ unsigned short validargs(int argc, char **argv)
                     }
                 }
                 else if (!k_found && !r_found && !c_found)
-                    return mode_of_operation = 0x0000;
+                {
+                    mode_of_operation = 0x0000;
+                    return EXIT_FAILURE;
+                }
             }
         }
 
-        if(argc >= 3)
+        if(argc >= 3 && argc <= 9)
         {
             // If I reach this point I should set default values for rows and columns
             mode_of_operation |= row_value;
             mode_of_operation |= col_value;
+        }
+        else
+        {
+            mode_of_operation = 0x0000;
+            return EXIT_FAILURE;
         }
     }
 

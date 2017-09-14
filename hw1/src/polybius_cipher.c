@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <debug.h>
 #include "hw1.h"
 
 void insert(char *target, char *source, int length);
@@ -19,7 +20,7 @@ void encrypt_polybius(unsigned short mode)
     // Parse the columns and rows from the mode
     unsigned short rows = mode & 0x00F0;
     unsigned short columns = mode & 0x000F;
-    rows = (mode >> 4) & 0xFF;
+    rows = (mode >> 4) & 0xF;
     length_of_table = rows * columns;
 
     // Lets just assume no key was passed
@@ -40,7 +41,6 @@ void encrypt_polybius(unsigned short mode)
         alpha_after_key_insert(key, polybius_table, polybius_alphabet, length_of_key, length_of_table);
         insert_nulls(polybius_table, length_of_table);
     }
-
     // Now I think I should get the users input
     user_input_encrypt(polybius_table, columns);
 }
@@ -52,7 +52,7 @@ void decrypt_polybius(unsigned short mode)
     // Parse the columns and rows from the mode
     unsigned short rows = mode & 0x00F0;
     unsigned short columns = mode & 0x000F;
-    rows = (mode >> 4) & 0xFF;
+    rows = (mode >> 4) & 0xF;
     length_of_table = rows * columns;
 
     // Reconstructing the table
@@ -155,6 +155,7 @@ void insert_nulls(char *a_table, int where_to_start)
 
 }
 
+
 // Take user input
 void user_input_encrypt(char *the_polybius_encryption_table, int the_cols)
 {
@@ -162,14 +163,14 @@ void user_input_encrypt(char *the_polybius_encryption_table, int the_cols)
     while((c = getchar()) != EOF)
     {
         if(c == '\n')
-            printf("\n");
+            fprintf(stdout, "\n");
         else if (c == 32)
-            printf(" ");
+            fprintf(stdout, " ");
         else if (c == '\t')
-            printf("\t");
+            fprintf(stdout, "\t");
         else
         {
-            printf("%X%X", encrypt_rows(the_polybius_encryption_table, c, the_cols),
+            fprintf(stdout, "%X%X", encrypt_rows(the_polybius_encryption_table, c, the_cols),
                 encrypt_columns(the_polybius_encryption_table, c, the_cols));
         }
     }
@@ -226,11 +227,20 @@ void user_input_decrypt(char *the_polybius_decryption_table, int table_column)
     while((c = getchar()) != EOF)
     {
         if(c == '\n')
-            printf("\n");
+        {
+            fprintf(stdout, "\n");
+            even_odd = 1;
+        }
         else if (c == 32)
-            printf(" ");
+        {
+            fprintf(stdout, " ");
+            even_odd = 1;
+        }
         else if (c == '\t')
-            printf("\t");
+        {
+            fprintf(stdout, "\t");
+            even_odd = 1;
+        }
         else if ((even_odd % 2) != 0) // Meaning its odd
         {
             if (c == 'A')
@@ -305,9 +315,10 @@ void user_input_decrypt(char *the_polybius_decryption_table, int table_column)
             {
                 given_column = (c - '0');
                 even_odd++;
-                index_value = (given_row * table_column) + given_column;
-                printf("%c", *(the_polybius_decryption_table + index_value));
             }
+
+            index_value = (given_row * table_column) + given_column;
+            fprintf(stdout, "%c", *(the_polybius_decryption_table + index_value));
         }
     }
 }
@@ -328,5 +339,13 @@ WITHOUT KEY
 
 MY OUTPUT -       375540201816A0A2
 EXPECTED OUTPUT - 375540201816A0A2
+
+TEST -----
+HE AN NEW IPHONE X -- HA'S PONOUNE "EN," Y HE WAY, NO "EX" -- IS A PHONE OF FISS FO APPLE
+HE AN NEW IPHONE X -- HA'S PONOUNE "EN," Y HE WAY, NO "EX" -- IS A PHONE OF FISS FO APPLE
+
+
+!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+
 
 */

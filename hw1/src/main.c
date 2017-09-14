@@ -26,18 +26,37 @@ int main(int argc, char **argv)
     if(mode & 0x8000) {
         USAGE(*argv, EXIT_SUCCESS);
     }
-    else if (mode & 0x2000)
+    else if (mode & 0x4000)
     {
-        printf("%s\n", "Polybius Decryption");
-        decrypt_polybius(mode);
-        return EXIT_SUCCESS;
+        if(mode & 0x2000)
+        {
+            fprintf(stdout, "%s\n", "Fractionated Morse Decryption");
+            decrypt_morse(mode);
+            return EXIT_SUCCESS;
+        }
+        else
+        {
+            fprintf(stdout, "%s\n", "Fractionated Morse Encryption");
+            encrypt_morse(mode);
+            return EXIT_SUCCESS;
+        }
     }
-    else if(mode & 0x00AA)
+    else
     {
-        printf("%s\n", "Polybius Encryption");
-        encrypt_polybius(mode);
-        return EXIT_SUCCESS;
+        if (mode & 0x2000)
+        {
+            //printf("%s\n", "Polybius Decryption");
+            decrypt_polybius(mode);
+            return EXIT_SUCCESS;
+        }
+        else
+        {
+            //printf("%s\n", "Polybius Encryption");
+            encrypt_polybius(mode);
+            return EXIT_SUCCESS;
+        }
     }
+
 
     return EXIT_SUCCESS;
 }

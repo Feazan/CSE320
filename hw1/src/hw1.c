@@ -55,7 +55,6 @@ unsigned short validargs(int argc, char **argv)
     // If there are not enough arguments
     if (argc <= 1 || argc > MAXVALUE)
     {
-        printf("%s\n", "Incorrect Number of Arguments");
         // Could possibly return EXIT_FAILURE message
         return 0x8000;
     }
@@ -227,6 +226,7 @@ unsigned short validargs(int argc, char **argv)
         }
     }
 
+    //printf("The mode of operation is: %d\n", mode_of_operation);
     return mode_of_operation;
 }
 

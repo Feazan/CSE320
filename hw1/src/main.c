@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     mode = validargs(argc, argv);
     if (mode == 0)
     {
-        EXIT_FAILURE;
+        return EXIT_FAILURE;
     }
 
     debug("Mode: 0x%X", mode);
@@ -35,13 +35,11 @@ int main(int argc, char **argv)
     {
         if(mode & 0x2000)
         {
-            fprintf(stdout, "%s\n", "Fractionated Morse Decryption");
             decrypt_morse(mode);
             return EXIT_SUCCESS;
         }
         else
         {
-            fprintf(stdout, "%s\n", "Fractionated Morse Encryption");
             encrypt_morse(mode);
             return EXIT_SUCCESS;
         }

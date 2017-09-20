@@ -41,7 +41,9 @@ parse_args(int argc, char *argv[])
           if (optopt != 'h')
             fprintf(stderr, KRED "-%c is not a supported argument\n" KNRM,
                     optopt);
-        case "errorcase"[0]:
+          // Removed the quotes around errorcase
+          // Removed case from front of it and [0]
+        errorcase:
           USAGE(argv[0]);
           exit(0);
         }
@@ -94,9 +96,13 @@ join_string_array(int count, char *array[])
   char charArray[count];
   int i;
   int len = 0, str_len, cur_str_len;
-
   str_len = array_size(count, array);
-  ret = &charArray;
+
+  // to use str_len
+  printf("%d\n", str_len);
+
+  // Removed the & from ret = &charArray
+  ret = charArray;
 
   for (i = 0; i < count; ++i) {
     cur_str_len = strlen(array[i]);
@@ -123,7 +129,8 @@ array_size(int count, char *array[])
 void
 print_state()
 {
-errorcase:
+  // Comment out errorcase
+//errorcase:
   if (program_state == NULL) {
     error("program_state is %p", (void*)program_state);
     exit(EXIT_FAILURE);

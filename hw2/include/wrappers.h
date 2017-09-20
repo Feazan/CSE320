@@ -1,3 +1,6 @@
+#ifndef WRAPPERS_H
+#define WRAPPERS_H
+
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -6,6 +9,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+// Wrapper should not have access to utf
 #include "utf.h"
 
 /**
@@ -44,3 +48,5 @@ void* memeset(void* s, int c, size_t n);
 * @param n number of bytes to fill
 */
 void* memecpy(void* dest, const void* src, size_t n);
+
+#endif /* WRAPPERS_H */

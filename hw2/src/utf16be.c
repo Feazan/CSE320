@@ -35,11 +35,13 @@ from_utf16be_to_utf16le(int infile, int outfile)
 }
 
 
-
+// Printed infile and outfile
 int
 from_utf16be_to_utf8(int infile, int outfile)
 {
   /* TODO */
+  printf("%d\n", infile);
+  printf("%d\n", outfile);
   return -1;
 }
 

@@ -1,3 +1,6 @@
+#ifndef UTF_H
+#define UTF_H
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -10,9 +13,11 @@
 #define AS_BYTE(x) ((char*)x)
 #define AS_GLYF(x) ((utf8_glyph_t*)x)
 
-const char *STR_UTF16BE  = "UTF16BE";
-char *const STR_UTF16LE = "UTF16LE";
-char const *STR_UTF8  = "UTF8";
+// changed all variable types to char *const
+// commented out everything after = sign
+char *const STR_UTF16BE;  //= "UTF16BE";
+char *const STR_UTF16LE; //= "UTF16LE";
+char *const STR_UTF8;  //= "UTF8";
 
 typedef enum { UTF16LE = 0xFFFE, UTF16BE = 0xFEFF, UTF8 = 0xBFBBEF } format_t;
 
@@ -172,3 +177,5 @@ utf16_glyph_t code_point_to_utf16be_glyph(code_point_t code_point, size_t *size_
             "            Will contain a Byte Order Marking (BOM)\n",           \
             (prog_name));                                                      \
   } while (0)
+
+  #endif /* UTF_H */

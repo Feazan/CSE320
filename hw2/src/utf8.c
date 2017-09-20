@@ -192,18 +192,19 @@ remaining_utf8_bytes(utf8_byte_t first_byte)
   return 0;
 }
 
+// Removed the () and & to mimic encoding
 utf8_decoding_func_t
 get_utf8_decoding_function(size_t size)
 {
   switch(size) {
   case 1:
-    return &utf8_one_byte_decode();
+    return utf8_one_byte_decode;
   case 2:
-    return &utf8_two_byte_decode();
+    return utf8_two_byte_decode;
   case 3:
-    return &utf8_three_byte_decode();
+    return &utf8_three_byte_decode;
   case 4:
-    return &utf8_four_byte_decode();
+    return &utf8_four_byte_decode;
   }
   return NULL;
 }

@@ -22,20 +22,22 @@ parse_args(int argc, char *argv[])
 
   joined_argv = join_string_array(argc, argv);
   info("argc: %d argv: %s", argc, joined_argv);
+  // Something funky going on here
   free(joined_argv);
 
   program_state = Calloc(1, sizeof(state_t));
   for (i = 0; optind < argc; ++i) {
-    debug("%d opterr: %d", i, opterr);
-    debug("%d optind: %d", i, optind);
-    debug("%d optopt: %d", i, optopt);
+    debug("%d opterr: %d\n", i, opterr);
+    debug("%d optind: %d\n", i, optind);
+    debug("%d optopt: %d\n", i, optopt);
     debug("%d argv[optind]: %s", i, argv[optind]);
-    if ((option = getopt(argc, argv, "+ei:")) != -1) {
+    if ((option = getopt(argc, argv, "+e:")) != -1) {
       switch (option) {
         case 'e': {
-          info("Encoding Argument: %s", optarg);
+          info("\nEncoding Argument: %s", optarg);
           if ((program_state->encoding_to = determine_format(optarg)) == 0)
             goto errorcase;
+          break;
         }
         case '?': {
           if (optopt != 'h')
@@ -64,17 +66,18 @@ parse_args(int argc, char *argv[])
       optind++;
     }
   }
-  free(joined_argv);
+  // Something funky going on here
+  //free(joined_argv);
 }
 
 format_t
 determine_format(char *argument)
 {
-  if (strcmp(argument, STR_UTF16LE) == 0)
+  if (strcmp(argument, "UTF16LE") == 0)
     return UTF16LE;
-  if (strcmp(argument, STR_UTF16BE) == 0)
+  if (strcmp(argument, "UTF16BE") == 0)
     return UTF16BE;
-  if (strcmp(argument, STR_UTF8) == 0)
+  if (strcmp(argument, "UTF8") == 0)
     return UTF8;
   return 0;
 }
@@ -82,9 +85,9 @@ determine_format(char *argument)
 char*
 bom_to_string(format_t bom){
   switch(bom){
-    case UTF8: return STR_UTF8;
-    case UTF16BE: return STR_UTF16BE;
-    case UTF16LE: return STR_UTF16LE;
+    case UTF8: return "UTF8";
+    case UTF16BE: return "UTF16BE";
+    case UTF16LE: return "UTF16LE";
   }
   return "UNKNOWN";
 }
@@ -92,19 +95,21 @@ bom_to_string(format_t bom){
 char*
 join_string_array(int count, char *array[])
 {
-  char *ret;
-  char charArray[count];
+  //char charArray[count];
   int i;
-  int len = 0, str_len, cur_str_len;
+  int len, str_len, cur_str_len = 0;
   str_len = array_size(count, array);
 
+  // not allocating memory for *ret
+  char *ret;
+
   // to use str_len
-  printf("%d\n", str_len);
+  //printf("%d\n", str_len);
 
   // Removed the & from ret = &charArray
-  ret = charArray;
+  ret = malloc(1 + str_len);
 
-  for (i = 0; i < count; ++i) {
+  for (i = 0; i < count; i++) {
     cur_str_len = strlen(array[i]);
     memecpy(ret + len, array[i], cur_str_len);
     len += cur_str_len;
@@ -112,6 +117,7 @@ join_string_array(int count, char *array[])
     len += 1;
   }
 
+  //free(ret);
   return ret;
 }
 

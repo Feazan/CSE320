@@ -19,8 +19,10 @@ main(int argc, char *argv[])
   if(program_state != NULL) {
     close(infile); //maybe infile (intptr_t)program_state
   }
+
+  debug("EVERYTHING IS DONE");
   //I think this is how this works
-  free((void*)(intptr_t)outfile);
-  free((void*)(intptr_t)infile);
+  close(outfile);
+
   return EXIT_SUCCESS;
 }

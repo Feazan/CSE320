@@ -15,9 +15,9 @@
 
 // changed all variable types to char *const
 // commented out everything after = sign
-char *const STR_UTF16BE;  //= "UTF16BE";
-char *const STR_UTF16LE; //= "UTF16LE";
-char *const STR_UTF8;  //= "UTF8";
+extern char *const STR_UTF16BE;  //= "UTF16BE";
+extern char *const STR_UTF16LE; //= "UTF16LE";
+extern char *const STR_UTF8;  //= "UTF8";
 
 typedef enum { UTF16LE = 0xFFFE, UTF16BE = 0xFEFF, UTF8 = 0xBFBBEF } format_t;
 

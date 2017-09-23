@@ -4,6 +4,10 @@
 #include <sys/sendfile.h>
 #include <unistd.h>
 
+char *const STR_UTF16BE = "UTF16BE";
+char *const STR_UTF16LE = "UTF16LE";
+char *const STR_UTF8  = "UTF8";
+
 convertion_func_t
 get_encoding_function()
 {
@@ -122,5 +126,7 @@ utf16_glyph_to_code_point(utf16_glyph_t *glyph)
 bool
 is_code_point_surrogate(code_point_t code_point)
 {
-  return (code_point >= 10000);
+  // Changed >= to > and added 0x to 10000 to mimic
+  // UTF doc
+  return (code_point > 0x10000);
 }

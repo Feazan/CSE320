@@ -23,7 +23,7 @@ parse_args(int argc, char *argv[])
   joined_argv = join_string_array(argc, argv);
   info("argc: %d argv: %s", argc, joined_argv);
   // Something funky going on here
-  free(joined_argv);
+  //free(joined_argv);
 
   program_state = Calloc(1, sizeof(state_t));
   for (i = 0; optind < argc; ++i) {
@@ -67,7 +67,7 @@ parse_args(int argc, char *argv[])
     }
   }
   // Something funky going on here
-  //free(joined_argv);
+  free(joined_argv);
 }
 
 format_t
@@ -85,9 +85,9 @@ determine_format(char *argument)
 char*
 bom_to_string(format_t bom){
   switch(bom){
-    case UTF8: return "UTF8";
-    case UTF16BE: return "UTF16BE";
-    case UTF16LE: return "UTF16LE";
+    case UTF8: return STR_UTF8;
+    case UTF16BE: return STR_UTF16BE;
+    case UTF16LE: return STR_UTF16LE;
   }
   return "UNKNOWN";
 }
@@ -96,21 +96,23 @@ char*
 join_string_array(int count, char *array[])
 {
   //char charArray[count];
+  char *ret = NULL;
   int i;
-  int len, str_len, cur_str_len = 0;
+  int len = 0;
+  int str_len = 0;
+  int cur_str_len = 0;
   str_len = array_size(count, array);
 
   // not allocating memory for *ret
-  char *ret;
-
+  ret = malloc(str_len + 1);
   // to use str_len
   //printf("%d\n", str_len);
 
   // Removed the & from ret = &charArray
-  ret = malloc(1 + str_len);
 
   for (i = 0; i < count; i++) {
     cur_str_len = strlen(array[i]);
+    //info("THIS IS THE VALUE OF CURR_STR_LEN %d", curr_str_len);
     memecpy(ret + len, array[i], cur_str_len);
     len += cur_str_len;
     memecpy(ret + len, " ", 1);

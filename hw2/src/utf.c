@@ -111,9 +111,15 @@ code_point_t
 utf16_glyph_to_code_point(utf16_glyph_t *glyph)
 {
   code_point_t ret = 0;
+
   if(!is_upper_surrogate_pair(*glyph)) {
-    ret = glyph->upper_bytes;
+    ret = (glyph->upper_bytes << 8);
   }
+
+  if(!is_lower_surrogate_pair(*glyph)) {
+    ret |= glyph->lower_bytes;
+  }
+
   else {
     // TODO changed from 100 to 10
     ret = (((glyph->upper_bytes - 0xD800) << 10) |

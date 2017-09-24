@@ -45,7 +45,6 @@ from_utf16be_to_utf8(int infile, int outfile)
   //printf("%d\n", outfile);
   // Assume I need the same local variables
   int ret = 0;
-  int bom;
   utf8_glyph_t utf8_buf;
   ssize_t bytes_read;
  // size_t remaining_bytes;
@@ -53,17 +52,23 @@ from_utf16be_to_utf8(int infile, int outfile)
   code_point_t code_point = 0;
   utf16_glyph_t utf16_buf;
 
-  bom = UTF8;
-  #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  reverse_bytes(&bom, 2);
-  #endif
 // 1 byte at a time
   // checking while greater than 0 b/c if 0 we can write it directly
-  while((bytes_read = read_to_bigendian(infile, &utf16_buf.upper_bytes, 1)) > 0
-  && (bytes_read = read_to_bigendian(infile, &utf16_buf.lower_bytes, 1)) > 0)
+  while((bytes_read = read_to_bigendian(infile, &utf16_buf.upper_bytes, 2)) > 0)
   {
+    reverse_bytes(&utf16_buf, size_of_glyph);
 
-    code_point = utf16_glyph_to_code_point(&utf16_buf);
+    if (is_upper_surrogate_pair(utf16_buf))
+    {
+      bytes_read = read_to_bigendian(infile, &utf16_buf.lower_bytes, 2);
+      reverse_bytes(&utf16_buf.lower_bytes, size_of_glyph);
+      code_point = utf16_glyph_to_code_point(&utf16_buf);
+    }
+    else
+    {
+      code_point = utf16_buf.upper_bytes;
+    }
+
     utf8_buf = code_point_to_utf8_glyph(code_point, &size_of_glyph);
     write_to_bigendian(outfile, &utf8_buf, size_of_glyph);
 

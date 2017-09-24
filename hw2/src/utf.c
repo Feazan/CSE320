@@ -113,11 +113,11 @@ utf16_glyph_to_code_point(utf16_glyph_t *glyph)
   code_point_t ret = 0;
 
   if(!is_upper_surrogate_pair(*glyph)) {
-    ret = (glyph->upper_bytes << 8);
+    ret = (glyph->upper_bytes);
   }
 
   if(!is_lower_surrogate_pair(*glyph)) {
-    ret |= glyph->lower_bytes;
+    ret = glyph->lower_bytes;
   }
 
   else {

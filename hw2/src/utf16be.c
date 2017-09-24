@@ -12,7 +12,7 @@ from_utf16be_to_utf16le(int infile, int outfile)
   ssize_t bytes_to_write;
   int ret = -1;
 
-  bom = UTF16LE;
+  bom = UTF16BE;
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   reverse_bytes(&bom, 3);
 #endif
@@ -40,33 +40,30 @@ from_utf16be_to_utf16le(int infile, int outfile)
 int
 from_utf16be_to_utf8(int infile, int outfile)
 {
-  /* TODO */
-  //printf("%d\n", infile);
-  //printf("%d\n", outfile);
-  // Assume I need the same local variables
-  int ret = 0;
+  // Assume I need the same variables
+  int ret;
   utf8_glyph_t utf8_buf;
   ssize_t bytes_read;
- // size_t remaining_bytes;
   size_t size_of_glyph;
-  code_point_t code_point = 0;
+  code_point_t code_point;
   utf16_glyph_t utf16_buf;
 
-// 1 byte at a time
+  // 1 byte at a time
   // checking while greater than 0 b/c if 0 we can write it directly
   while((bytes_read = read_to_bigendian(infile, &utf16_buf.upper_bytes, 2)) > 0)
   {
-    reverse_bytes(&utf16_buf, size_of_glyph);
+    reverse_bytes(&utf16_buf.upper_bytes, 2);
 
-    if (is_upper_surrogate_pair(utf16_buf))
+    if (!is_upper_surrogate_pair(utf16_buf))
     {
-      bytes_read = read_to_bigendian(infile, &utf16_buf.lower_bytes, 2);
-      reverse_bytes(&utf16_buf.lower_bytes, size_of_glyph);
-      code_point = utf16_glyph_to_code_point(&utf16_buf);
+
+      code_point = utf16_buf.upper_bytes;
     }
     else
     {
-      code_point = utf16_buf.upper_bytes;
+      bytes_read = read_to_bigendian(infile, &utf16_buf.lower_bytes, 2);
+      reverse_bytes(&utf16_buf.lower_bytes, 2);
+      code_point = utf16_glyph_to_code_point(&utf16_buf);
     }
 
     utf8_buf = code_point_to_utf8_glyph(code_point, &size_of_glyph);

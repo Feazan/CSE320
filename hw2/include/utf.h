@@ -146,6 +146,8 @@ size_t utf8_glyph_size_of_code_point(code_point_t code_point);
 
 void print_state();
 
+int get_inode(int fd);
+
 char *bom_to_string(format_t bom);
 
 size_t remaining_utf8_bytes(utf8_byte_t first_byte);

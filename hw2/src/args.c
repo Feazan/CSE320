@@ -5,10 +5,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 int opterr;
 int optopt;
 int optind;
+int inode;
 char *optarg;
 
 state_t *program_state;
@@ -41,8 +44,12 @@ parse_args(int argc, char *argv[])
         }
         case '?': {
           if (optopt != 'h')
+          {
             fprintf(stderr, KRED "-%c is not a supported argument\n" KNRM,
                     optopt);
+            USAGE(argv[0]);
+            exit(EXIT_FAILURE);
+          }
           // Removed the quotes around errorcase
           // Removed case from front of it and [0]
         errorcase:
@@ -54,6 +61,9 @@ parse_args(int argc, char *argv[])
         }
       }
     }
+    // I think we need to do the file checking here
+    // 194
+
     elsif(argv[optind] != NULL)
     {
       if (program_state->in_file == NULL) {
@@ -151,4 +161,18 @@ print_state()
          "};\n",
          program_state->encoding_to, program_state->encoding_from,
          program_state->in_file, program_state->out_file);
+}
+
+int
+get_inode (int fd)
+{
+    struct stat buf;
+    int ret;
+
+    ret = fstat(fd, &buf);
+    if ( ret < 0 )
+    {
+         exit(EXIT_FAILURE);
+    }
+    return buf.st_ino;
 }

@@ -58,7 +58,7 @@ unsigned short validargs(int argc, char **argv)
     }
     else
     {
-        if (argc == 2 && !validargs_helper(*((argv+1)), "-h"))
+        if (argc == 2 && !validargs_helper(*(argv+1), "-h"))
         {
             return mode_of_operation = 0x0000;
         }
@@ -67,7 +67,7 @@ unsigned short validargs(int argc, char **argv)
         {
             // Highest order bit
             // This is the first argument after the name of the program
-            if(validargs_helper(*((argv+1)), "-h"))
+            if(validargs_helper(*(argv+1), "-h"))
                 return 0x8000;
             else if (validargs_helper(*((argv+1)), "-p"))
             {

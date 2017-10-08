@@ -1,19 +1,25 @@
 #include <stdio.h>
 #include "sfmm.h"
+#include "feazan_funk.h"
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char const *argv[])
+{
 
     sf_mem_init();
 
-    double* ptr = sf_malloc(sizeof(double));
 
-    *ptr = 320320320e-320;
+    // sf_snapshot();
+    // sf_blockprint(&seg_free_list[3].head->header);
 
-    printf("%f\n", *ptr);
+    double* ptr = sf_malloc(16);
+    //*ptr = 320320320e-320;
 
-    sf_free(ptr);
+    printf("%p\n", ptr);
+    // printf("%f\n", *ptr);
 
-    sf_mem_fini();
+    //sf_free(ptr);
+
+    //sf_mem_fini();
 
     return EXIT_SUCCESS;
 }

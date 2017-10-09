@@ -38,6 +38,9 @@ void *sf_malloc(size_t size)
     }
 
     // If heap is not intialized allocate a new page
+    // search free lists, if they have nothing availible
+    // see if theres a block you can use
+    // THEN call sf_sbrk
     if (get_heap_start() == NULL)
     {
         printf("%s\n", "Heap was initially NULL allocating a page");
@@ -50,31 +53,38 @@ void *sf_malloc(size_t size)
     }
 
     int list_index = get_sf_free_index(size);
-    for (int i = list_index; i < FREE_LIST_COUNT; i++) {
-        if (seg_free_list[i].head != NULL) {
-            printf("%i %s\n", i, "list is being traversed");
-            if (seg_free_list[i].head->header.allocated == 0) {
-                if (seg_free_list[i].head->header.block_size > size + 16) {
+    for (int i = list_index; i < FREE_LIST_COUNT; i++)
+    {
+        if (seg_free_list[i].head != NULL)
+        {
+            printf("List %d is being traversed\n", i+1);
+            if (seg_free_list[i].head->header.allocated == 0)
+            {
+                if (seg_free_list[i].head->header.block_size > size + 16)
+                {
                     printf("%s\n", "Found a matching block");
 
                     int payload_pad_size = pad_size(size);
-                    // seg_free_list[i].head->header.block_size = payload_pad_size + 16;
-                    seg_free_list[i].head->header.block_size = 32;
+                    printf("The padded size is: %d\n", payload_pad_size);
+                    // When you write the lower 4 is 0 so we need to shift right 4
+                    // when Reading shift left 4 to put the 4 bits back in
+                    seg_free_list[i].head->header.block_size = (payload_pad_size + (SF_HEADER_SIZE/4)) >> 4;
                     seg_free_list[i].head->header.allocated = 1;
-                    seg_free_list[i].head->header.padded = payload_pad_size != size;
+                    seg_free_list[i].head->header.padded = 1;
+                    //sf_blockprint(&seg_free_list[i].head->header);
 
-                    sf_footer *footer = (sf_footer *) (&seg_free_list[i].head->header + 3);
+                    sf_footer *footer = (sf_footer *) ((char *)(&seg_free_list[i].head->header) + (payload_pad_size + (SF_HEADER_SIZE/8)));
 
                     printf("%s %p\n", "Memory address for header", &seg_free_list[i].head->header);
                     printf("%s %p\n", "Memory address for footer", footer);
+
                     footer->requested_size = size;
                     footer->block_size = seg_free_list[i].head->header.block_size;
                     footer->allocated = 1;
                     footer->padded = 1;
                     footer->two_zeroes = 0x00;
-
+                    sf_snapshot();
                     sf_blockprint(&seg_free_list[i].head->header);
-                    sf_blockprint(&footer);
                 }
             }
         }
@@ -152,6 +162,8 @@ void *add_new_page()
         return NULL;
     }
 
+    // The value of the lists can change
+    // Do a check before you place the value from heap into list
     free_list *last_free_list = &seg_free_list[FREE_LIST_COUNT - 1];
     new_page->next = last_free_list->head;
     new_page->prev = NULL;

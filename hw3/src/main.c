@@ -8,13 +8,15 @@ int main(int argc, char const *argv[])
     sf_mem_init();
 
 
-    // sf_snapshot();
-    // sf_blockprint(&seg_free_list[3].head->header);
+     //sf_snapshot();
+     //sf_blockprint(&seg_free_list[3].head->header);
 
-    double* ptr = sf_malloc(16);
+    //double* ptr = sf_malloc(sizeof(double));
+    sf_malloc(sizeof(double));
+    //sf_blockprint(&seg_free_list[3].head->header);
     //*ptr = 320320320e-320;
 
-    printf("%p\n", ptr);
+    //printf("%p\n", ptr);
     // printf("%f\n", *ptr);
 
     //sf_free(ptr);

@@ -29,7 +29,6 @@ int sf_errno = 0;
 // Start here
 void *sf_malloc(size_t size)
 {
-    printf("This is the size that is passed: %ld\n", size);
     // Check if the size of the memory requested is within range
     if (size <= 0 || size > (PAGE_SZ * FREE_LIST_COUNT))
     {
@@ -43,13 +42,13 @@ void *sf_malloc(size_t size)
     // THEN call sf_sbrk
     if (get_heap_start() == NULL)
     {
-        printf("%s\n", "Heap was initially NULL allocating a page");
+        // After the add_new_page() function runs
+        // The correct element stores a page of memory
+        // Free header and free footer point to the correct positions
         void *mem_start = add_new_page();
         if (mem_start == NULL) {
             return NULL;
         }
-        printf("The address of mem_start: %p\n", mem_start);
-        printf("The address of get_heap_start: %p\n", get_heap_start());
     }
 
     int list_index = get_sf_free_index(size);
@@ -60,12 +59,10 @@ void *sf_malloc(size_t size)
             printf("List %d is being traversed\n", i+1);
             if (seg_free_list[i].head->header.allocated == 0)
             {
-                if (seg_free_list[i].head->header.block_size > size + 16)
+                if (seg_free_list[i].head->header.block_size > size)
                 {
-                    printf("%s\n", "Found a matching block");
 
                     int payload_pad_size = pad_size(size);
-                    printf("The padded size is: %d\n", payload_pad_size);
                     // When you write the lower 4 is 0 so we need to shift right 4
                     // when Reading shift left 4 to put the 4 bits back in
                     seg_free_list[i].head->header.block_size = (payload_pad_size + (SF_HEADER_SIZE/4)) >> 4;
@@ -74,15 +71,13 @@ void *sf_malloc(size_t size)
                     //sf_blockprint(&seg_free_list[i].head->header);
 
                     sf_footer *footer = (sf_footer *) ((char *)(&seg_free_list[i].head->header) + (payload_pad_size + (SF_HEADER_SIZE/8)));
-
-                    printf("%s %p\n", "Memory address for header", &seg_free_list[i].head->header);
-                    printf("%s %p\n", "Memory address for footer", footer);
-
                     footer->requested_size = size;
                     footer->block_size = seg_free_list[i].head->header.block_size;
                     footer->allocated = 1;
                     footer->padded = 1;
                     footer->two_zeroes = 0x00;
+
+
                     sf_snapshot();
                     sf_blockprint(&seg_free_list[i].head->header);
                 }
@@ -155,28 +150,48 @@ void *add_new_page()
 
     // allocate new page
     sf_free_header *new_page = sf_sbrk();
+    printf("%p\n", new_page);
 
     // handle case when new page cannot be obtained
-    if (new_page == (void *) -1) {
+    if (new_page == (void *) -1)
+    {
         sf_errno = ENOMEM;
         return NULL;
     }
 
     // The value of the lists can change
     // Do a check before you place the value from heap into list
-    free_list *last_free_list = &seg_free_list[FREE_LIST_COUNT - 1];
+    // Put the value of the page into the
+    // bucket where it will fit
+
+    // try using page size
+    int index_of_page = get_sf_free_index(PAGE_SZ);
+    free_list *last_free_list = &seg_free_list[index_of_page];
     new_page->next = last_free_list->head;
     new_page->prev = NULL;
     new_page->header.allocated = 0;
     new_page->header.padded = 0;
 
     // Total block size for the page is page size minus space for next/prev pointers
-    new_page->header.block_size = PAGE_SZ - 16;
+    new_page->header.block_size = PAGE_SZ >> 4;
 
-    if (last_free_list->head != NULL) {
+    sf_footer *free_footer = (sf_footer *) (((char *)(new_page)) +  PAGE_SZ - SF_HEADER_SIZE/8);
+        //(sf_footer *) ((char *)(&seg_free_list[i].head->header)
+    free_footer->requested_size = 0;
+    free_footer->block_size = PAGE_SZ >> 4;
+    free_footer->allocated = 0;
+    free_footer->padded = 0;
+    free_footer->two_zeroes = 0x00;
+
+
+    if (last_free_list->head != NULL)
+    {
         last_free_list->head->prev = new_page;
     }
     last_free_list->head = new_page;
+
+    sf_snapshot();
+    sf_blockprint(new_page);
 
     return last_free_list->head;
 }

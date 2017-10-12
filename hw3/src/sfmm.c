@@ -9,7 +9,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#define RIGHT_SHIFT(sz) (sz >> 4)
+#define RIGHT_SHIFT(size) (size >> 4)
+#define LEFT_SHIFT(size) (size << 4)
 
 
 
@@ -31,6 +32,8 @@ int sf_errno = 0;
 // Start here
 void *sf_malloc(size_t size)
 {
+    sf_header *block_to_allocate;
+
     // Check if the size of the memory requested is within range
     if (size <= 0 || size > (PAGE_SZ * FREE_LIST_COUNT))
     {
@@ -45,10 +48,14 @@ void *sf_malloc(size_t size)
     if (get_heap_start() == NULL)
     {
         initialize();
-        // TODO: Dont hard code 3
-        find_free_block(size, 3);
-
     }
+
+    // TODO: fix the hard coded 3 -- Need to find the best fit
+    block_to_allocate = find_free_block(size, 3);
+
+
+    sf_snapshot();
+    sf_blockprint(block_to_allocate);
 
 
 	return NULL;
@@ -103,25 +110,6 @@ void initialize()
 
         // TODO: fix the hard coded 3 -- Need to find the best fit
         seg_free_list[3].head = free_header;
-
-        //sf_blockprint(free_header);
-        sf_snapshot();
-}
-
-int index_to_place(size_t size)
-{
-    int index;
-
-    if (size > LIST_1_MIN && size < LIST_1_MAX)
-        index = 0;
-    else if (size > LIST_2_MIN && size < LIST_2_MAX)
-        index = 1;
-    else if (size > LIST_3_MIN && size < LIST_3_MAX)
-        index = 2;
-    else
-        index = 3;
-
-    return index;
 }
 
 // Might just pass the entire seg_free_list to this function
@@ -130,10 +118,11 @@ void *find_free_block(size_t size, int index)
     sf_header *free_block;
 
     // Search from index to LIST_SIZE -1
-    for (int i  = index; i < FREE_LIST_COUNT; i++)
+    for (int i = index; i < FREE_LIST_COUNT; i++)
     {
         // Traverse each node in the list
         // Check each block_size << 4 (Make this a define)
+        // TODO: didnt shift by 4, fix that
         if (seg_free_list[i].head != NULL)
         {
             if (seg_free_list[i].head->header.block_size >= size)
@@ -146,6 +135,12 @@ void *find_free_block(size_t size, int index)
     }
 
     // Return that block
-    sf_blockprint(free_block);
     return free_block;
+}
+
+void remove_block_from_list(sf_header *block_to_remove, int index)
+{
+    // After block is removed
+    // Create a new header for the (free block - (allocated block size))
+    //
 }

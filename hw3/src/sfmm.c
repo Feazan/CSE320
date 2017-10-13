@@ -33,9 +33,10 @@ int sf_errno = 0;
 void *sf_malloc(size_t size)
 {
     char *block_to_allocate;
+    sf_free_header *free_header;
+    // sf_header allocated_block;
 
     int padded_size = pad_size(size);
-    printf("THE PADDED SIZE IS: %d\n", padded_size);
 
     // Check if the size of the memory requested is within range
     if (size <= 0 || size > (PAGE_SZ * FREE_LIST_COUNT))
@@ -54,15 +55,19 @@ void *sf_malloc(size_t size)
     }
 
     // TODO: fix the hard coded 3 -- Need to find the best fit
-    block_to_allocate = (char *)find_free_block(padded_size, 3);
+    // removed char *
+    block_to_allocate = find_free_block(padded_size, 3);
     remove_block_from_list(block_to_allocate, 3);
     sf_blockprint(block_to_allocate);
+    // update free list
+    // allocate
 
-    create_new_header_footer(block_to_allocate, padded_size);
+    free_header = (sf_free_header *)split_block(block_to_allocate, padded_size);
+    printf("Addresss of the free header: %p\n", free_header);
 
 
 
-	return NULL;
+	return block_to_allocate;
 }
 
 void *sf_realloc(void *ptr, size_t size) {
@@ -172,38 +177,33 @@ void remove_block_from_list(sf_header *block_to_remove, int index)
     // TODO: if block to remove is the last one
 }
 
-void create_new_header_footer(char *block_to_split, size_t size)
+void *split_block(char *block_to_split, size_t size)
 {
+    // Add 16 to account for the header and footer
     size += 16;
+    sf_free_header *free_header = (sf_free_header *)block_to_split;
+    int old_block_size = free_header->header.block_size;
+    int new_block_size = (old_block_size << 4) - size;
 
-    // Block was already removed, no need for seg_free_list
     // Create the new header
-    // sf_free_header *free_header = (sf_free_header *) mem_start;
-    sf_header *updated_header = (sf_header *) (block_to_split + size);
-    updated_header->allocated = 0;
-    updated_header->padded = 0;
-    updated_header->two_zeroes = 0x00;
-    updated_header->block_size = 254;
+    sf_free_header *updated_header = (sf_free_header *) (block_to_split + size);
+    updated_header->header.allocated = 0;
+    updated_header->header.padded = 0;
+    updated_header->header.two_zeroes = 0x00;
+    updated_header->header.block_size = new_block_size >> 4;
 
 
-    // Create a new footer
-    //size_t free_block_size = updated_header->block_size;
-    // Address of free_footer: 0x605010
+    // Update the footer
     sf_footer *updated_footer = (sf_footer *)((block_to_split - 8) + PAGE_SZ);
     updated_footer->allocated = 0;
     updated_footer->padded = 0;
     updated_footer->two_zeroes = 0x00;
-    updated_footer->block_size = 254;
+    updated_footer->block_size = new_block_size >> 4;
     updated_footer->requested_size = 0;
 
     sf_blockprint(updated_header);
 
     // Insert the new header into the block
     // Store total block size
-
-
-    // Update the footer
-
-
-
+    return updated_header;
 }

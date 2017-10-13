@@ -54,20 +54,31 @@ void *sf_malloc(size_t size)
         initialize();
     }
 
+    sf_snapshot();
+
     // TODO: fix the hard coded 3 -- Need to find the best fit
     // removed char *
     block_to_allocate = find_free_block(padded_size, 3);
+
     remove_block_from_list(block_to_allocate, 3);
-    sf_blockprint(block_to_allocate);
     // update free list
     // allocate
 
+    // This is what needs to get added to the free list
     free_header = (sf_free_header *)split_block(block_to_allocate, padded_size);
     printf("Addresss of the free header: %p\n", free_header);
 
+    // Insert the free block into the list
+    // TODO: fix hard coded 3
+    add_to_free_list(free_header, 3);
+    sf_snapshot();
+
+    // Now I need to return pointer to the block size
 
 
-	return block_to_allocate;
+
+
+	return block_to_allocate + 8;
 }
 
 void *sf_realloc(void *ptr, size_t size) {
@@ -100,6 +111,21 @@ int pad_size(size_t size)
     while ((size % 16) != 0)
         size++;
     return size;
+}
+
+// The purpose of this method is to try and find which
+// Index the requested memory size fits into
+int get_sf_free_index(size_t size)
+{
+    for (int i = 0; i < FREE_LIST_COUNT; i++)
+    {
+        if (seg_free_list[i].max > (size + 16) || seg_free_list[i].max == -1)
+        {
+            return i;
+        }
+    }
+    // Just in case
+    return -1;
 }
 
 void initialize()
@@ -201,9 +227,17 @@ void *split_block(char *block_to_split, size_t size)
     updated_footer->block_size = new_block_size >> 4;
     updated_footer->requested_size = 0;
 
-    sf_blockprint(updated_header);
-
     // Insert the new header into the block
     // Store total block size
     return updated_header;
 }
+
+void add_to_free_list(sf_free_header *header_to_insert, int index)
+{
+    while(seg_free_list[index].head != NULL)
+    {
+        index++;
+    }
+    seg_free_list[index].head = header_to_insert;
+}
+

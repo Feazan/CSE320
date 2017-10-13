@@ -7,17 +7,15 @@ int main(int argc, char const *argv[])
 
     sf_mem_init();
 
-
-     //sf_snapshot();
-     //sf_blockprint(&seg_free_list[3].head->header);
-
-    //double* ptr = sf_malloc(sizeof(double));
-    sf_malloc(sizeof(double));
+    double* ptr = sf_malloc(sizeof(double));
+    int* ptr2 = sf_malloc(sizeof(int));
+    char* ptr3 = sf_malloc(sizeof(char));
+    //sf_malloc(sizeof(double));
     //sf_blockprint(&seg_free_list[3].head->header);
     //*ptr = 320320320e-320;
-
-    //printf("%p\n", ptr);
-    // printf("%f\n", *ptr);
+    printf("The double: %f\n", *ptr);
+    printf("The int: %d\n", *ptr2);
+    printf("The char: %c\n", *ptr3);
 
     //sf_free(ptr);
 

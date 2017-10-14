@@ -27,6 +27,8 @@ int main(int argc, char const *argv[])
     printf("The char: %c\n", *ptr3);*/
     printf("Big ptr: %c\n", *big_ptr);
 
+    sf_blockprint((char *) big_ptr -8);
+
     //sf_free(ptr);
 
     //sf_mem_fini();

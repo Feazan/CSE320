@@ -54,7 +54,6 @@ void *sf_malloc(size_t size)
         initialize();
     }
 
-    //sf_snapshot();
     // TODO: fix the hard coded 3 -- Need to find the best fit
     // removed char *
     block_to_allocate = find_free_block(padded_size, 3);
@@ -191,19 +190,18 @@ void *find_free_block(size_t size, int index)
         {
             // Function for getting more memory
             char *new_page = give_more_memory();
+            // Initialize the new page
+            initialize_new_page(new_page);
             // Call coalesce
             coalesce(new_page);
 
-
-
         }
-        // PAGE = 4 ERROR (Just in case)
+        // PAGE == 4 ERROR (Just in case)
         else if (num_pages == 4)
         {
             sf_errno = ENOMEM;
             return NULL;
         }
-
     }
 
     // Return that block
@@ -328,31 +326,61 @@ void *give_more_memory()
     return new_page;
 }
 
-void coalesce(void *mem_start)
+void coalesce(void *new_mem_start)
 {
     // Add a header and footer to the newly added page
-    // Initialize the new page
-    initialize_new_page(mem_start);
+
     // check previous footer
+
+    sf_footer *prev_footer = (sf_footer *)((char *)new_mem_start - 8);
+    size_t prev_block_size = (prev_footer->block_size) << 4;
+    sf_header *prev_header = (sf_header *)((char *)prev_footer - prev_block_size) + 8;
+    sf_blockprint(prev_header);
+
+    sf_header *new_mem_header = (sf_header *)new_mem_start;
+    size_t new_mem_size = new_mem_header->block_size << 4;
+    sf_footer *new_mem_footer = (sf_footer *) ((char *)new_mem_header + (new_mem_size - 8));
+    sf_blockprint(new_mem_header);
+
+    if (prev_footer->allocated == 0)
+    {
+        // This might need to be a - 8 instead of a + 8
+
+
+        // Update the header [correct pointer arithmatic?]
+        prev_header = (sf_header *)((char *)prev_footer - prev_block_size + 8);
+        prev_header->allocated = 0;
+        prev_header->padded = 0;
+        prev_header->two_zeroes = 0x00;
+        prev_header->block_size = (prev_block_size + PAGE_SZ) >> 4;
+
+        // Update the footer
+        new_mem_footer->allocated = 0;
+        new_mem_footer->padded = 0;
+        new_mem_footer->two_zeroes = 0x00;
+        new_mem_footer->block_size = (prev_block_size + PAGE_SZ) >> 4;
+        new_mem_footer->requested_size = 0;
+
+        // Test
+        sf_blockprint(prev_header);
+    }
 
 }
 
-void initialize_new_page(void *mem_start)
+void initialize_new_page(void *new_mem_start)
 {
     // The page that is pulled from the heap is free memory
-    sf_free_header *free_header = (sf_free_header *) mem_start;
+    sf_header *free_header = (sf_header *) new_mem_start;
 
     // Set the values of the header for initial setup
     // Do not need new header new page is my entry page
-    free_header->header.allocated = 0;
-    free_header->header.padded = 0;
-    free_header->header.two_zeroes = 0x00;
-    free_header->header.block_size = RIGHT_SHIFT(PAGE_SZ);
-    free_header->next = NULL;
-    free_header->prev = NULL;
+    free_header->allocated = 0;
+    free_header->padded = 0;
+    free_header->two_zeroes = 0x00;
+    free_header->block_size = RIGHT_SHIFT(PAGE_SZ);
 
     // Set the values of the footer for the initial setup
-    sf_footer *free_footer = (sf_footer *) (mem_start + (PAGE_SZ - 8));
+    sf_footer *free_footer = (sf_footer *) (new_mem_start + (PAGE_SZ - 8));
     free_footer->allocated = 0;
     free_footer->padded = 0;
     free_footer->two_zeroes = 0;

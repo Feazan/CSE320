@@ -12,9 +12,6 @@
 #define RIGHT_SHIFT(size) (size >> 4)
 #define LEFT_SHIFT(size) (size << 4)
 
-
-
-
 /**
  * You should store the heads of your free lists in these variables.
  * Doing so will make it accessible via the extern statement in sfmm.h
@@ -28,6 +25,8 @@ free_list seg_free_list[4] = {
 };
 
 int sf_errno = 0;
+// TODO: make sure to incremment this properly
+static int num_pages = 0;
 
 // Start here
 void *sf_malloc(size_t size)
@@ -49,23 +48,22 @@ void *sf_malloc(size_t size)
     // search free lists, if they have nothing availible
     // see if theres a block you can use
     // THEN call sf_sbrk
+    // TODO: do not check == NULL
     if (get_heap_start() == NULL)
     {
         initialize();
     }
 
-    sf_snapshot();
+    //sf_snapshot();
     // TODO: fix the hard coded 3 -- Need to find the best fit
     // removed char *
     block_to_allocate = find_free_block(padded_size, 3);
 
-    remove_block_from_list(block_to_allocate, 3);
     // update free list
     // allocate
 
     // This is what needs to get added to the free list
     free_header = (sf_free_header *)split_block(block_to_allocate, padded_size);
-    printf("Addresss of the free header: %p\n", free_header);
 
     // Insert the free block into the list
     // TODO: fix hard coded 3
@@ -73,9 +71,12 @@ void *sf_malloc(size_t size)
 
     // Now I need to return pointer to the block size
 
-    sf_snapshot();
+    //sf_snapshot();
 
-
+    // Need block to allocate and block size passed
+    // to function  that will add the header and footer to
+    // the allocated block
+    header_footer_for_allocated_block(block_to_allocate, padded_size);
 
 	return block_to_allocate + 8;
 }
@@ -131,6 +132,7 @@ void initialize()
 {
         // This pulls a page (4096 b) from memory and stores it in mem_start
         void *mem_start = sf_sbrk();
+        num_pages++;
         // The page that is pulled from the heap is free memory
         sf_free_header *free_header = (sf_free_header *) mem_start;
 
@@ -177,9 +179,31 @@ void *find_free_block(size_t size, int index)
             }
             else
             {
+                // What happens when I reach here and the
+                // next is null
+                // I need a new page
                 free_block = free_block->next;
             }
         }
+
+        // The method to get a new page goes here
+        if (ask_for_more_memory(free_block))
+        {
+            // Function for getting more memory
+            char *new_page = give_more_memory();
+            // Call coalesce
+            coalesce(new_page);
+
+
+
+        }
+        // PAGE = 4 ERROR (Just in case)
+        else if (num_pages == 4)
+        {
+            sf_errno = ENOMEM;
+            return NULL;
+        }
+
     }
 
     // Return that block
@@ -205,6 +229,8 @@ void remove_block_from_list(sf_free_header *block_to_remove, int index)
         block_to_remove->prev->next = block_to_remove->next;
     }
 }
+
+// TODO: Put function to add node here
 
 void *split_block(char *block_to_split, size_t size)
 {
@@ -244,4 +270,94 @@ void add_to_free_list(sf_free_header *header_to_insert, int index)
     }
     seg_free_list[index].head = header_to_insert;
 }
+
+// TODO: Does this function need to return anything?
+void header_footer_for_allocated_block(char *allocated_block, size_t block_size)
+{
+    // Maybe I can pass size here and do size += 16;
+    block_size += 16;
+    // allocated_header is the reference to the header that needs to be set
+    sf_free_header *allocated_header = (sf_free_header *)allocated_block;
+    allocated_header->header.allocated = 1;
+    // TODO: Need a check if padded was true
+    allocated_header->header.padded = 1;
+    allocated_header->header.two_zeroes = 0x00;
+    allocated_header->header.block_size = block_size >> 4;
+
+    // Need to set the allocated footer
+    sf_footer *allocated_footer = (sf_footer *)((allocated_block - 8) + (block_size));
+    allocated_footer->allocated = 1;
+    // TODO: Need to check if padded was true
+    allocated_footer->padded = 1;
+    allocated_footer->two_zeroes = 0x00;
+    allocated_footer->block_size = block_size >> 4;
+    allocated_footer->requested_size = 0;
+
+    // How do I test that this worked correctly?
+    //sf_blockprint(allocated_header);
+    //sf_snapshot();
+}
+
+
+bool ask_for_more_memory(sf_free_header *free_block)
+{
+    if (num_pages < 4 && free_block == NULL)
+        return true;
+    else
+        return false;
+}
+
+void *give_more_memory()
+{
+    // local variables
+    void *heap_start = get_heap_start();
+    void *heap_end = get_heap_end();
+
+    if(heap_start != NULL && heap_end != NULL)
+    {
+        num_pages = (heap_end - heap_start)/PAGE_SZ;
+        printf("Number of pages BEFORE sf_sbrk: %d\n", num_pages);
+    }
+
+    // Get the new page of memory
+    void *new_page = sf_sbrk();
+    num_pages++;
+
+    printf("Number of pages AFTER sf_sbrk: %d\n", num_pages);
+
+    return new_page;
+}
+
+void coalesce(void *mem_start)
+{
+    // Add a header and footer to the newly added page
+    // Initialize the new page
+    initialize_new_page(mem_start);
+    // check previous footer
+
+}
+
+void initialize_new_page(void *mem_start)
+{
+    // The page that is pulled from the heap is free memory
+    sf_free_header *free_header = (sf_free_header *) mem_start;
+
+    // Set the values of the header for initial setup
+    // Do not need new header new page is my entry page
+    free_header->header.allocated = 0;
+    free_header->header.padded = 0;
+    free_header->header.two_zeroes = 0x00;
+    free_header->header.block_size = RIGHT_SHIFT(PAGE_SZ);
+    free_header->next = NULL;
+    free_header->prev = NULL;
+
+    // Set the values of the footer for the initial setup
+    sf_footer *free_footer = (sf_footer *) (mem_start + (PAGE_SZ - 8));
+    free_footer->allocated = 0;
+    free_footer->padded = 0;
+    free_footer->two_zeroes = 0;
+    free_footer->block_size = RIGHT_SHIFT(PAGE_SZ);
+    free_footer->requested_size = 0;
+}
+
 

@@ -55,7 +55,6 @@ void *sf_malloc(size_t size)
     }
 
     sf_snapshot();
-
     // TODO: fix the hard coded 3 -- Need to find the best fit
     // removed char *
     block_to_allocate = find_free_block(padded_size, 3);
@@ -71,10 +70,10 @@ void *sf_malloc(size_t size)
     // Insert the free block into the list
     // TODO: fix hard coded 3
     add_to_free_list(free_header, 3);
-    sf_snapshot();
 
     // Now I need to return pointer to the block size
 
+    sf_snapshot();
 
 
 
@@ -205,6 +204,7 @@ void remove_block_from_list(sf_header *block_to_remove, int index)
 
 void *split_block(char *block_to_split, size_t size)
 {
+    // old_block_size should be the allocated size
     // Add 16 to account for the header and footer
     size += 16;
     sf_free_header *free_header = (sf_free_header *)block_to_split;
@@ -220,7 +220,7 @@ void *split_block(char *block_to_split, size_t size)
 
 
     // Update the footer
-    sf_footer *updated_footer = (sf_footer *)((block_to_split - 8) + PAGE_SZ);
+    sf_footer *updated_footer = (sf_footer *)((block_to_split - 8) + (old_block_size << 4));
     updated_footer->allocated = 0;
     updated_footer->padded = 0;
     updated_footer->two_zeroes = 0x00;

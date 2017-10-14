@@ -10,9 +10,15 @@ int main(int argc, char const *argv[])
     double* ptr = sf_malloc(sizeof(double));
     int* ptr2 = sf_malloc(sizeof(int));
     char* ptr3 = sf_malloc(sizeof(char));
+
+    *ptr = 1.2;
+    *ptr2 = 2;
+    *ptr3 = 'c';
+
     //sf_malloc(sizeof(double));
     //sf_blockprint(&seg_free_list[3].head->header);
     //*ptr = 320320320e-320;
+
     printf("The double: %f\n", *ptr);
     printf("The int: %d\n", *ptr2);
     printf("The char: %c\n", *ptr3);

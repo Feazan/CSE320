@@ -157,7 +157,7 @@ void initialize()
 // Might just pass the entire seg_free_list to this function
 void *find_free_block(size_t size, int index)
 {
-    sf_header *free_block;
+    sf_free_header *free_block;
 
     // Search from index to LIST_SIZE -1
     for (int i = index; i < FREE_LIST_COUNT; i++)
@@ -165,13 +165,19 @@ void *find_free_block(size_t size, int index)
         // Traverse each node in the list
         // Check each block_size << 4 (Make this a define)
         // TODO: didnt shift by 4, fix that
-        if (seg_free_list[i].head != NULL)
+        free_block = seg_free_list[i].head;
+        while (free_block != NULL)
         {
-            if (seg_free_list[i].head->header.block_size >= size)
+            if (free_block->header.block_size >= size)
             {
                 // If >= then I have my block
                 // set that free block
-                free_block = &seg_free_list[i].head->header;
+                remove_block_from_list(free_block, index);
+                break;
+            }
+            else
+            {
+                free_block = free_block->next;
             }
         }
     }
@@ -180,26 +186,24 @@ void *find_free_block(size_t size, int index)
     return free_block;
 }
 
-void remove_block_from_list(sf_header *block_to_remove, int index)
+void remove_block_from_list(sf_free_header *block_to_remove, int index)
 {
-    // Node to remove is the only one in the list
-    if (seg_free_list[index].head->prev == NULL && seg_free_list[index].head->next == NULL)
+    sf_free_header **head = &seg_free_list[index].head;
+
+    // Node to remove is the head node
+    if (*head == block_to_remove)
     {
-        seg_free_list[index].head = NULL;
+        *head = block_to_remove->next;
     }
-    // Want to remove the head, but there are other nodes
-    else if (seg_free_list[index].head->prev == NULL)
+    // Node to remove is not the last node
+    if (block_to_remove->next != NULL)
     {
-        seg_free_list[index].head = seg_free_list[index].head->next;
-        seg_free_list[index].head->next->prev = NULL;
-        seg_free_list[index].head->next = NULL;
+        block_to_remove->next->prev = block_to_remove->prev;
     }
-    else
+    if (block_to_remove->prev != NULL)
     {
-        seg_free_list[index].head->prev = seg_free_list[index].head->next;
-        seg_free_list[index].head->next->prev = seg_free_list[index].head->prev;
+        block_to_remove->prev->next = block_to_remove->next;
     }
-    // TODO: if block to remove is the last one
 }
 
 void *split_block(char *block_to_split, size_t size)

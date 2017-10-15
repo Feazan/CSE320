@@ -34,7 +34,6 @@ int main(int argc, char const *argv[])
     // void *x = sf_malloc(PAGE_SZ << 2);
     // printf("%p\n", (char *)x);
 
-
     sf_mem_fini();
 
     return EXIT_SUCCESS;

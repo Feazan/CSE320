@@ -72,7 +72,6 @@ void *sf_malloc(size_t size)
 
     // Now I need to return pointer to the block size
 
-    //sf_snapshot();
 
     // Need block to allocate and block size passed
     // to function  that will add the header and footer to
@@ -356,14 +355,11 @@ void *give_more_memory()
     if(heap_start != NULL && heap_end != NULL)
     {
         num_pages = (heap_end - heap_start)/PAGE_SZ;
-        //printf("Number of pages BEFORE sf_sbrk: %d\n", num_pages);
     }
 
     // Get the new page of memory
     void *new_page = sf_sbrk();
     num_pages++;
-
-    //printf("Number of pages AFTER sf_sbrk: %d\n", num_pages);
 
     return new_page;
 }
@@ -383,23 +379,18 @@ void *coalesce(void *new_mem_start)
     sf_footer *new_mem_footer = (sf_footer *) ((char *)new_mem_header + (new_mem_size - 8));
 
     int coalesce_index = get_sf_free_index(new_mem_size);
-    //sf_snapshot();
 
     add_to_top(coalesce_index, new_mem_header);
 
-    //sf_snapshot();
 
     if (prev_footer->allocated == 0)
     {
         int index1 = get_sf_free_index(prev_block_size);
         int index2 = get_sf_free_index(new_mem_header->block_size << 4);
         // This might need to be a - 8 instead of a + 8
-        //sf_snapshot();
 
         remove_block_from_list((sf_free_header *)prev_header, index1);
         remove_block_from_list((sf_free_header *)new_mem_header, index2);
-
-        //sf_snapshot();
 
 
         // Update the header [correct pointer arithmatic?]
@@ -418,9 +409,6 @@ void *coalesce(void *new_mem_start)
 
         int index3 = get_sf_free_index(prev_header->block_size << 4);
         add_to_top(index3, prev_header);
-
-        //sf_blockprint(prev_header);
-       // sf_snapshot();
     }
 
     return (void *)prev_header;

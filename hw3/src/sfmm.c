@@ -26,6 +26,7 @@ free_list seg_free_list[4] = {
 
 int sf_errno = 0;
 static int num_pages = 0;
+bool needed_pad = false;
 
 // Start here
 void *sf_malloc(size_t size)
@@ -66,8 +67,8 @@ void *sf_malloc(size_t size)
     free_header = (sf_free_header *)split_block(block_to_allocate, padded_size);
 
     // Insert the free block into the list
-    // TODO: fix hard coded 3
-    add_to_free_list(free_header, 3);
+    int add = get_sf_free_index(free_header->header.block_size << 4);
+    add_to_free_list(free_header, add);
 
     // Now I need to return pointer to the block size
 
@@ -108,9 +109,19 @@ void sf_free(void *ptr)
 // Function takes care of padding for size
 int pad_size(size_t size)
 {
+    needed_pad = needed_paddding(size);
+
     while ((size % 16) != 0)
         size++;
     return size;
+}
+
+bool needed_paddding(size_t size)
+{
+    if(size % 16 == 0)
+        return false;
+    else
+        return true;
 }
 
 // The purpose of this method is to try and find which
@@ -167,8 +178,8 @@ void initialize()
         free_footer->block_size = RIGHT_SHIFT(PAGE_SZ);
         free_footer->requested_size = 0;
 
-        // TODO: fix the hard coded 3 -- Need to find the best fit
-        seg_free_list[3].head = free_header;
+        int where_to_place_first = get_sf_free_index(PAGE_SZ);
+        seg_free_list[where_to_place_first].head = free_header;
 }
 
 // Might just pass the entire seg_free_list to this function
@@ -181,11 +192,10 @@ void *find_free_block(size_t size, int index)
     {
         // Traverse each node in the list
         // Check each block_size << 4 (Make this a define)
-        // TODO: didnt shift by 4, fix that
         free_block = seg_free_list[i].head;
         while (free_block != NULL)
         {
-            if (free_block->header.block_size >= size)
+            if ((free_block->header.block_size << 4) >= size)
             {
                 // If >= then I have my block
                 // set that free block
@@ -197,23 +207,18 @@ void *find_free_block(size_t size, int index)
                 // What happens when I reach here and the
                 // next is null
                 // I need a new page
-                free_block = free_block->next;
+                // Function for getting more memory
+                char *new_page = give_more_memory();
+                // Initialize the new page
+                initialize_new_page(new_page);
+                // Call coalesce
+                free_block = coalesce(new_page);
             }
         }
 
-        // The method to get a new page goes here
-        if (ask_for_more_memory(free_block))
-        {
-            // Function for getting more memory
-            char *new_page = give_more_memory();
-            // Initialize the new page
-            initialize_new_page(new_page);
-            // Call coalesce
-            free_block = coalesce(new_page);
 
-        }
         // PAGE == 4 ERROR (Just in case)
-        if (num_pages == 4)
+        if (num_pages == 5)
         {
             sf_errno = ENOMEM;
             return NULL;
@@ -260,8 +265,6 @@ void remove_block_from_list(sf_free_header *block_to_remove, int index)
     }
 }
 
-// TODO: Put function to add node here
-
 void *split_block(char *block_to_split, size_t size)
 {
     // old_block_size should be the allocated size
@@ -301,7 +304,6 @@ void add_to_free_list(sf_free_header *header_to_insert, int index)
     seg_free_list[index].head = header_to_insert;
 }
 
-// TODO: Does this function need to return anything?
 void header_footer_for_allocated_block(char *allocated_block, size_t block_size)
 {
     // Maybe I can pass size here and do size += 16;
@@ -309,16 +311,28 @@ void header_footer_for_allocated_block(char *allocated_block, size_t block_size)
     // allocated_header is the reference to the header that needs to be set
     sf_free_header *allocated_header = (sf_free_header *)allocated_block;
     allocated_header->header.allocated = 1;
-    // TODO: Need a check if padded was true
-    allocated_header->header.padded = 1;
+    if (needed_pad == true)
+    {
+        allocated_header->header.padded = 1;
+    }
+    else
+    {
+        allocated_header->header.padded = 0;
+    }
     allocated_header->header.two_zeroes = 0x00;
     allocated_header->header.block_size = block_size >> 4;
 
     // Need to set the allocated footer
     sf_footer *allocated_footer = (sf_footer *)((allocated_block - 8) + (block_size));
     allocated_footer->allocated = 1;
-    // TODO: Need to check if padded was true
-    allocated_footer->padded = 1;
+    if (needed_pad == true)
+    {
+        allocated_footer->padded = 1;
+    }
+    else
+    {
+        allocated_footer->padded = 0;
+    }
     allocated_footer->two_zeroes = 0x00;
     allocated_footer->block_size = block_size >> 4;
     allocated_footer->requested_size = 0;
@@ -342,14 +356,14 @@ void *give_more_memory()
     if(heap_start != NULL && heap_end != NULL)
     {
         num_pages = (heap_end - heap_start)/PAGE_SZ;
-        printf("Number of pages BEFORE sf_sbrk: %d\n", num_pages);
+        //printf("Number of pages BEFORE sf_sbrk: %d\n", num_pages);
     }
 
     // Get the new page of memory
     void *new_page = sf_sbrk();
     num_pages++;
 
-    printf("Number of pages AFTER sf_sbrk: %d\n", num_pages);
+    //printf("Number of pages AFTER sf_sbrk: %d\n", num_pages);
 
     return new_page;
 }
@@ -369,23 +383,23 @@ void *coalesce(void *new_mem_start)
     sf_footer *new_mem_footer = (sf_footer *) ((char *)new_mem_header + (new_mem_size - 8));
 
     int coalesce_index = get_sf_free_index(new_mem_size);
-    sf_snapshot();
+    //sf_snapshot();
 
     add_to_top(coalesce_index, new_mem_header);
 
-    sf_snapshot();
+    //sf_snapshot();
 
     if (prev_footer->allocated == 0)
     {
         int index1 = get_sf_free_index(prev_block_size);
         int index2 = get_sf_free_index(new_mem_header->block_size << 4);
         // This might need to be a - 8 instead of a + 8
-        sf_snapshot();
+        //sf_snapshot();
 
         remove_block_from_list((sf_free_header *)prev_header, index1);
         remove_block_from_list((sf_free_header *)new_mem_header, index2);
 
-        sf_snapshot();
+        //sf_snapshot();
 
 
         // Update the header [correct pointer arithmatic?]
@@ -405,8 +419,8 @@ void *coalesce(void *new_mem_start)
         int index3 = get_sf_free_index(prev_header->block_size << 4);
         add_to_top(index3, prev_header);
 
-        sf_blockprint(prev_header);
-        sf_snapshot();
+        //sf_blockprint(prev_header);
+       // sf_snapshot();
     }
 
     return (void *)prev_header;

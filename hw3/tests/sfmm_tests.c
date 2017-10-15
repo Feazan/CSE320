@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <signal.h>
 #include "sfmm.h"
+#include "feazan_funk.h"
 
 
 int find_list_index_from_size(int sz) {
@@ -185,3 +186,86 @@ Test(sf_memsuite_student, realloc_smaller_block_free_block, .init = sf_mem_init,
 //DO NOT DELETE THESE COMMENTS
 //############################################
 
+
+Test(sf_memsuite_student, my_test, .init = sf_mem_init, .fini = sf_mem_fini) {
+	sf_errno = 0;
+	void *x = sf_malloc(sizeof(double));
+
+	cr_assert_not_null(x);
+}
+
+Test(sf_memsuite_student, my_test2, .init = sf_mem_init, .fini = sf_mem_fini) {
+	sf_errno = 0;
+
+	int size_to_pad = 32;
+	int padded_size = 0;
+
+	padded_size = pad_size(size_to_pad);
+
+	cr_assert(padded_size == 32, "The size was not padded");
+}
+
+Test(sf_memsuite_student, my_test3, .init = sf_mem_init, .fini = sf_mem_fini) {
+	sf_errno = 0;
+
+	int size_to_pad = 33;
+	int padded_size = 0;
+
+	padded_size = pad_size(size_to_pad);
+
+	cr_assert(padded_size == 48, "The size was not padded");
+}
+
+Test(sf_memsuite_student, my_test4, .init = sf_mem_init, .fini = sf_mem_fini) {
+	sf_errno = 0;
+
+	int size_to_pad = 33;
+	bool test = false;
+
+	test = needed_paddding(size_to_pad);
+
+	cr_assert(test == true, "The size needed padding, but was not padded");
+}
+
+Test(sf_memsuite_student, my_test5, .init = sf_mem_init, .fini = sf_mem_fini) {
+	sf_errno = 0;
+
+	int size_to_pad = 32;
+	bool test = false;
+
+	test = needed_paddding(size_to_pad);
+
+	cr_assert(test == false, "The size didn't need padding");
+}
+
+Test(sf_memsuite_student, my_test6, .init = sf_mem_init, .fini = sf_mem_fini) {
+	sf_errno = 0;
+
+	char *new_page = give_more_memory();
+
+	cr_assert_not_null(new_page, "new_page was NULL!");
+}
+
+Test(sf_memsuite_student, my_test7, .init = sf_mem_init, .fini = sf_mem_fini) {
+	sf_errno = 0;
+
+	int z = (sizeof(sf_malloc(sizeof(int))));
+
+	cr_assert(z == 8, "Correct size was not malloc'd");
+
+}
+
+
+Test(sf_memsuite_student, my_test8, .init = sf_mem_init, .fini = sf_mem_fini)
+{
+	sf_errno = 0;
+
+	int *x = sf_malloc(sizeof(double));
+	*x = 8;
+	cr_assert(*x == 8, "sf_malloc failed to give proper space for an double!");
+
+	sf_header *header = (sf_header*)((char*)x - 8);
+	free_list *fl = &seg_free_list[find_list_index_from_size(PAGE_SZ - (header->block_size << 4))];
+
+	cr_assert_not_null(fl, "Free list is null");
+}

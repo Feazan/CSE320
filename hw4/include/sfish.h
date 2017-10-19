@@ -7,3 +7,5 @@
 #define STRFTIME_RPRMT "%a %b %e, %I:%M%p"
 
 #endif
+
+void modify_prompt();

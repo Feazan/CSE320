@@ -8,11 +8,13 @@
 #include "sfish.h"
 #include "debug.h"
 
-int main(int argc, char *argv[], char* envp[]) {
+int main(int argc, char *argv[], char* envp[])
+{
     char* input;
     bool exited = false;
 
-    if(!isatty(STDIN_FILENO)) {
+    if(!isatty(STDIN_FILENO))
+    {
         // If your shell is reading from a piped file
         // Don't have readline write anything to that file.
         // Such as the prompt or "user input"
@@ -24,7 +26,8 @@ int main(int argc, char *argv[], char* envp[]) {
 
     do {
 
-        input = readline("> ");
+        modify_prompt();
+        input = readline(" :: fyaseen >> ");
 
         write(1, "\e[s", strlen("\e[s"));
         write(1, "\e[20;10H", strlen("\e[20;10H"));
@@ -35,7 +38,6 @@ int main(int argc, char *argv[], char* envp[]) {
         if(input == NULL) {
             continue;
         }
-
 
         // Currently nothing is implemented
         printf(EXEC_NOT_FOUND, input);

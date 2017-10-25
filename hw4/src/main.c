@@ -25,8 +25,6 @@ int main(int argc, char *argv[], char* envp[])
     }
 
     do {
-
-        modify_prompt();
         input = readline(" :: fyaseen >> ");
 
         write(1, "\e[s", strlen("\e[s"));
@@ -39,14 +37,29 @@ int main(int argc, char *argv[], char* envp[])
             continue;
         }
 
-        // Currently nothing is implemented
-        printf(EXEC_NOT_FOUND, input);
+        if(strcmp(input, "") != 0)
+        {
+            // At this point input stores the string user entered
+            handle_help(input);
+            handle_pwd(input);
+            handle_cd(input);
 
-        // You should change exit to a "builtin" for your hw.
-        exited = strcmp(input, "exit") == 0;
+            // Set the value of exit
+            exited = handle_exit(input);
+        }
 
-        // Readline mallocs the space for input. You must free it.
-        rl_free(input);
+        // In order to call the system exit(0) function
+        if (exited == true)
+        {
+            // Readline mallocs the space for input. You must free it.
+            rl_free(input);
+            exit(0);
+        }
+        else
+        {
+            // Readline mallocs the space for input. You must free it.
+            rl_free(input);
+        }
 
     } while(!exited);
 

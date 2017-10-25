@@ -8,4 +8,12 @@
 
 #endif
 
-void modify_prompt();
+void handle_help(char *source);
+bool check_for_builtin(char *source, char *word_to_check);
+void display_help();
+bool handle_exit(char *source);
+void handle_pwd(char *source);
+void handle_cd(char *source);
+
+int num_arguments(char *source);
+char* get_second_argument(char *source);

@@ -8,12 +8,7 @@
 
 #endif
 
-void handle_help(char *source);
-bool check_for_builtin(char *source, char *word_to_check);
-void display_help();
-bool handle_exit(char *source);
-void handle_pwd(char *source);
-void handle_cd(char *source);
-
-int num_arguments(char *source);
-char* get_second_argument(char *source);
+int num_args(char *source);
+char** readline_parse(char *source, int size);
+void check_builtin(char *user_args[], int argument_count);
+bool check_exit(char *user_args[]);

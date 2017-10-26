@@ -5,136 +5,79 @@
 #include <stdbool.h>
 #include <readline/readline.h>
 
-bool check_for_builtin(char *source, char *word_to_check)
+int num_args(char *source)
 {
-    // Local variables
-    char *first_argumment;
-    const char s[2] = " ";
-    int cmp_ret;
+  // TODO: Do not hard code size
+  char source_copy[1024];
+  char *my_token;
+  int num_args = 0;
+  const char delim[2] = " ";
 
-    // Copy the string becasue token will break  it
-    char *source_copy = malloc(sizeof(source));
-    strcpy(source_copy, source);
+  // Now I have a copy of source which I can break
+  strcpy(source_copy, source);
 
-    // This should contain the first argument
-    first_argumment = strtok(source, s);
+  // get the first token
+  my_token = strtok(source_copy, delim);
 
-    cmp_ret = strcmp(first_argumment, word_to_check);
+  // walk through other tokens
+  while (my_token != NULL)
+  {
+    num_args++;
+    my_token = strtok(NULL, delim);
+  }
 
-    // Copy back
-    strcpy(source, source_copy);
-    free(source_copy);
-
-    // Now check if the first argument equals word to check
-    if(cmp_ret == 0)
-        return true;
-    else
-        return false;
+  // TODO: ask TA about malloc and free for source_copy
+  return num_args;
 }
 
-void display_help()
+char** readline_parse(char *source, int size)
 {
-    write(1, "Do you need help?", strlen("Do you need help?"));
-    write(1, "\n", strlen("\n"));
+  // local variables
+  int i = 0;
+  char **argv = malloc(size * sizeof(char *));
+  // TODO: Don't hardcode size
+  char source_copy[1024];
+  char *my_token;
+  const char delim[2] = " ";
+
+  strcpy(source_copy, source);
+
+  my_token = strtok(source_copy, delim);
+
+  while(my_token != NULL)
+  {
+    argv[i] = malloc(sizeof(char *));
+    strcpy(argv[i], my_token);
+    i++;
+    my_token = strtok(NULL, delim);
+  }
+
+  // return the 2d array of the users arguments
+  return argv;
 }
 
-void handle_help(char *source)
+void check_builtin(char *user_args[], int argument_count)
 {
-    if (check_for_builtin(source, "help") == true)
+    if (strcmp(user_args[0], "help") == 0)
     {
-        display_help();
+        printf("%s\n", "Do you need help?!");
     }
-}
-
-bool handle_exit(char *source)
-{
-    bool exited = false;
-    if (check_for_builtin(source, "exit") == true)
+    else if (strcmp(user_args[0], "pwd") == 0)
     {
-        exited = true;
-    }
-
-    return exited;
-}
-
-void handle_pwd(char *source)
-{
-    char *ptr;
-
-    if (check_for_builtin(source, "pwd") == true)
-    {
+        char *ptr;
         char buf [1024];
         ptr = getcwd(buf, sizeof(buf));
 
-        printf("%s\n", ptr);
+        printf("The filepath is: %s\n", ptr);
     }
-}
-
-int num_arguments(char *source)
-{
-    int num_args = 0;
-    char *source_copy = malloc(sizeof(source));
-    char *my_token;
-
-    // The copy has the original string
-    strcpy(source_copy, source);
-
-    const char s[2] = " ";
-
-    /* get the first token */
-    my_token = strtok(source_copy, s);
-
-    /* walk through other tokens */
-    while (my_token != NULL)
+    else if (strcmp(user_args[0], "cd") == 0 && argument_count == 1)
     {
-        num_args++;
-        my_token = strtok(NULL, s);
+        chdir(getenv("HOME"));
+        return;
     }
-
-    return num_args;
-}
-
-char* get_second_argument(char *source)
-{
-    int second_arg = 0;
-    char *source_copy = malloc(sizeof(source));
-    char *my_token;
-    char *second_argument;
-
-    // The copy has the original string
-    strcpy(source_copy, source);
-
-    const char s[2] = " ";
-
-    /* get the first token */
-    my_token = strtok(source_copy, s);
-
-    while (second_arg < 2)
+    else if (strcmp(user_args[0], "cd") == 0 && argument_count > 1)
     {
-        second_argument = my_token;
-        my_token = strtok(NULL, s);
-        second_arg++;
-    }
-
-    return second_argument;
-}
-
-void handle_cd(char *source)
-{
-    char *second_argument;
-
-    if (num_arguments(source) == 1)
-    {
-        if (check_for_builtin(source, "cd") == true)
-        {
-            chdir(getenv("HOME"));
-            return;
-        }
-    }
-    else if (num_arguments(source) > 1)
-    {
-        // get the second argument
-        second_argument = get_second_argument(source);
+        char *second_argument = user_args[1];
         int chdir_value = chdir(second_argument);
 
         if(chdir_value == -1)
@@ -143,4 +86,15 @@ void handle_cd(char *source)
         }
     }
     return;
+}
+
+bool check_exit(char *user_args[])
+{
+    bool exited = false;
+    if (strcmp(user_args[0], "exit") == 0)
+    {
+        exited = true;
+    }
+
+    return exited;
 }

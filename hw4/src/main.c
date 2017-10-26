@@ -11,6 +11,8 @@
 int main(int argc, char *argv[], char* envp[])
 {
     char* input;
+    int arg_count;
+    char **arg_vector;
     bool exited = false;
 
     if(!isatty(STDIN_FILENO))
@@ -39,13 +41,13 @@ int main(int argc, char *argv[], char* envp[])
 
         if(strcmp(input, "") != 0)
         {
-            // At this point input stores the string user entered
-            handle_help(input);
-            handle_pwd(input);
-            handle_cd(input);
+            // arg_count stores the number of user arguments
+            arg_count = num_args(input);
+            // arg_vector stores an array of the users input
+            arg_vector = readline_parse(input, arg_count);
 
-            // Set the value of exit
-            exited = handle_exit(input);
+            check_builtin(arg_vector, arg_count);
+            exited = check_exit(arg_vector);
         }
 
         // In order to call the system exit(0) function

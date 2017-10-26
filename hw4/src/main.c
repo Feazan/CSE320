@@ -27,6 +27,7 @@ int main(int argc, char *argv[], char* envp[])
     }
 
     do {
+        print_prompt();
         input = readline(" :: fyaseen >> ");
 
         write(1, "\e[s", strlen("\e[s"));
@@ -60,6 +61,7 @@ int main(int argc, char *argv[], char* envp[])
         else
         {
             // Readline mallocs the space for input. You must free it.
+            // TODO: free arg_vector and all its elements
             rl_free(input);
         }
 

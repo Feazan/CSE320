@@ -5,6 +5,19 @@
 #include <stdbool.h>
 #include <readline/readline.h>
 
+void print_prompt()
+{
+    int prompt_len;
+    char cwd_prompt[1024];
+
+    char* brack = "~";
+    write(1, brack, 1);
+    getcwd(cwd_prompt, (1024 *sizeof(char)));
+
+    prompt_len = strlen(cwd_prompt);
+    write(1, cwd_prompt, prompt_len);
+}
+
 int num_args(char *source)
 {
   // TODO: Do not hard code size

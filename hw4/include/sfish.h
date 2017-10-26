@@ -12,3 +12,4 @@ int num_args(char *source);
 char** readline_parse(char *source, int size);
 void check_builtin(char *user_args[], int argument_count);
 bool check_exit(char *user_args[]);
+void print_prompt();

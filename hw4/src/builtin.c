@@ -7,15 +7,15 @@
 
 void print_prompt()
 {
-    int prompt_len;
-    char cwd_prompt[1024];
+  int prompt_len;
+  char cwd_prompt[1024];
 
-    char* tilda = "~";
-    write(1, tilda, 1);
-    getcwd(cwd_prompt, (1024 * sizeof(char)));
+  char* tilda = "~";
+  write(1, tilda, 1);
+  getcwd(cwd_prompt, (1024 * sizeof(char)));
 
-    prompt_len = strlen(cwd_prompt);
-    write(1, cwd_prompt, prompt_len);
+  prompt_len = strlen(cwd_prompt);
+  write(1, cwd_prompt, prompt_len);
 }
 
 int num_args(char *source)
@@ -71,43 +71,55 @@ char** readline_parse(char *source, int size)
 
 void check_builtin(char *user_args[], int argument_count)
 {
-    if (strcmp(user_args[0], "help") == 0)
-    {
-        printf("%s\n", "Do you need help?!");
-    }
-    else if (strcmp(user_args[0], "pwd") == 0)
-    {
-        char *ptr;
-        char buf [1024];
-        ptr = getcwd(buf, sizeof(buf));
+  // TODO: declare this in a better spot
+  int chdir_value;
 
-        printf("The filepath is: %s\n", ptr);
-    }
-    else if (strcmp(user_args[0], "cd") == 0 && argument_count == 1)
-    {
-        chdir(getenv("HOME"));
-        return;
-    }
-    else if (strcmp(user_args[0], "cd") == 0 && argument_count > 1)
-    {
-        char *second_argument = user_args[1];
-        int chdir_value = chdir(second_argument);
+  if (strcmp(user_args[0], "help") == 0)
+  {
+    printf("%s\n", "Do you need help?!");
+  }
+  else if (strcmp(user_args[0], "pwd") == 0)
+  {
+    char *ptr;
+    char buf [1024];
+    ptr = getcwd(buf, sizeof(buf));
 
-        if(chdir_value == -1)
-        {
-            perror("Some error");
-        }
-    }
+    printf("The filepath is: %s\n", ptr);
+  }
+  else if (strcmp(user_args[0], "cd") == 0 && argument_count == 1)
+  {
+    setenv("OLDPWD", getenv("PWD"), 1);
+    chdir(getenv("HOME"));
     return;
+  }
+  else if (strcmp(user_args[0], "cd") == 0 && argument_count > 1)
+  {
+    char *second_argument = user_args[1];
+    if (strcmp(second_argument, "-") == 0)
+    {
+      chdir(getenv("OLDPWD"));
+    }
+    else
+    {
+      setenv("OLDPWD", getenv("PWD"), 1);
+      chdir_value = chdir(second_argument);
+    }
+
+    if(chdir_value == -1)
+    {
+      perror("Some error");
+    }
+  }
+  return;
 }
 
 bool check_exit(char *user_args[])
 {
-    bool exited = false;
-    if (strcmp(user_args[0], "exit") == 0)
-    {
-        exited = true;
-    }
+  bool exited = false;
+  if (strcmp(user_args[0], "exit") == 0)
+  {
+    exited = true;
+  }
 
-    return exited;
+  return exited;
 }

@@ -69,6 +69,14 @@ char** readline_parse(char *source, int size)
   return argv;
 }
 
+void set_pwd()
+{
+  char *pwd;
+  char buf [1024];
+  pwd = getcwd(buf, sizeof(buf));
+  setenv("PWD", pwd, 1);
+}
+
 void check_builtin(char *user_args[], int argument_count)
 {
   // TODO: declare this in a better spot
@@ -90,6 +98,8 @@ void check_builtin(char *user_args[], int argument_count)
   {
     setenv("OLDPWD", getenv("PWD"), 1);
     chdir(getenv("HOME"));
+    set_pwd();
+
     return;
   }
   else if (strcmp(user_args[0], "cd") == 0 && argument_count > 1)
@@ -98,6 +108,7 @@ void check_builtin(char *user_args[], int argument_count)
     if (strcmp(second_argument, "-") == 0)
     {
       chdir(getenv("OLDPWD"));
+      setenv("OLDPWD", getenv("PWD"), 1);
     }
     else
     {
@@ -109,6 +120,9 @@ void check_builtin(char *user_args[], int argument_count)
     {
       perror("Some error");
     }
+
+    // TODO: cd - breaks for garbage value
+    set_pwd();
   }
   return;
 }

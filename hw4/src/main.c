@@ -49,7 +49,12 @@ int main(int argc, char *argv[], char* envp[])
 
             check_builtin(arg_vector, arg_count);
             exited = check_exit(arg_vector);
+
+            executables(arg_vector, arg_count);
         }
+
+        // Currently nothing is implemented
+        printf(EXEC_NOT_FOUND, input);
 
         // In order to call the system exit(0) function
         if (exited == true)

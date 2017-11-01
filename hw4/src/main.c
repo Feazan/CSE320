@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <readline/readline.h>
+#include <wait.h>
 
 #include "sfish.h"
 #include "debug.h"
@@ -24,7 +25,7 @@ int main(int argc, char *argv[], char* envp[])
     Signal(SIGCHLD, sigchld_handler);
     Signal(SIGINT, sigint_handler);
     sigemptyset(&mask);
-    sigaddset(&mask, SIGCHLD);
+    sigaddset(&mask, ~SIGCHLD);
 
     if(!isatty(STDIN_FILENO))
     {
@@ -53,6 +54,7 @@ int main(int argc, char *argv[], char* envp[])
 
         if(strcmp(input, "") != 0)
         {
+
             // arg_count stores the number of user arguments
             arg_count = num_args(input);
             // arg_vector stores an array of the users input
@@ -61,17 +63,27 @@ int main(int argc, char *argv[], char* envp[])
             builtin_found = check_builtin(arg_vector, arg_count);
             exited = check_exit(arg_vector);
 
-            Sigprocmask(SIG_BLOCK, &mask, &prev);
-
             if (!builtin_found)
             {
-                run_executable(arg_vector, arg_count);
+                Sigprocmask(SIG_BLOCK, &mask, &prev);
+                if ((Fork()) == 0)
+                {
+                    if (execvp(arg_vector[0], arg_vector) < 0)
+                    {
+                        printf("%s\n", "Command Not Found");
+                        exit(0);
+                    }
+                }
+
                 pid = 0;
                 while (!pid)
+                {
                     Sigsuspend(&prev);
-            }
+                    //pid = waitpid(-1, NULL, 0);
+                }
 
-            Sigprocmask(SIG_SETMASK, &prev, NULL);
+                Sigprocmask(SIG_SETMASK, &prev, NULL);
+            }
         }
 
         // Currently nothing is implemented

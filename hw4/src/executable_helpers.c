@@ -11,18 +11,6 @@
 
 volatile sig_atomic_t pid;
 
-void run_executable(char *user_args[], int argument_count)
-{
-    if ((Fork()) == 0)
-    {
-        if (execvp(user_args[0], user_args) < 0)
-        {
-            printf("%s\n", "Command Not Found");
-            exit(0);
-        }
-    }
-}
-
 void unix_error(char *msg) /* Unix-style error */
 {
     fprintf(stderr, "%s: %s\n", msg, strerror(errno));

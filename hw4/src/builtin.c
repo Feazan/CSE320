@@ -49,7 +49,6 @@ char** readline_parse(char *source, int size)
   int i = 0;
   char **argv = malloc(size * sizeof(char *));
   // TODO: Don't hardcode size
-  // execvp needs to stop with last argument being null
   char source_copy[1024];
   char *my_token;
   const char delim[2] = " ";
@@ -66,6 +65,8 @@ char** readline_parse(char *source, int size)
     my_token = strtok(NULL, delim);
   }
 
+  // execvp needs last element to be null
+  argv[i] = '\0';
   // return the 2d array of the users arguments
   return argv;
 }

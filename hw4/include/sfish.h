@@ -21,7 +21,6 @@ void set_pwd();
 extern volatile sig_atomic_t pid;
 typedef void handler_t(int);
 
-void executables(char *user_args[], int argument_count);
 void sigchld_handler(int s);
 void sigint_handler(int s);
 handler_t *Signal(int signum, handler_t *handler);
@@ -30,6 +29,4 @@ void unix_error(char *msg);
 void Sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
 pid_t Fork(void);
 int Sigsuspend(const sigset_t *set);
-
-void run_executable(char *user_args[], int argument_count);
 // Executables Helpers -----------------------------------

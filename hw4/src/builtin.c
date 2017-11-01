@@ -49,6 +49,7 @@ char** readline_parse(char *source, int size)
   int i = 0;
   char **argv = malloc(size * sizeof(char *));
   // TODO: Don't hardcode size
+  // execvp needs to stop with last argument being null
   char source_copy[1024];
   char *my_token;
   const char delim[2] = " ";
@@ -77,33 +78,39 @@ void set_pwd()
   setenv("PWD", pwd, 1);
 }
 
-void check_builtin(char *user_args[], int argument_count)
+bool check_builtin(char *user_args[], int argument_count)
 {
   // TODO: declare this in a better spot
   int chdir_value;
+  bool builtin_found = false;
 
   if (strcmp(user_args[0], "help") == 0)
   {
     printf("%s\n", "Do you need help?!");
+    builtin_found = true;
   }
   else if (strcmp(user_args[0], "pwd") == 0)
   {
     char *ptr;
     char buf [1024];
     ptr = getcwd(buf, sizeof(buf));
+    builtin_found = true;
 
     printf("The filepath is: %s\n", ptr);
   }
   else if (strcmp(user_args[0], "cd") == 0 && argument_count == 1)
   {
+    builtin_found = true;
     setenv("OLDPWD", getenv("PWD"), 1);
     chdir(getenv("HOME"));
     set_pwd();
 
-    return;
+    // Not sure if I need this return here
+    return builtin_found;
   }
   else if (strcmp(user_args[0], "cd") == 0 && argument_count > 1)
   {
+    builtin_found = true;
     char *second_argument = user_args[1];
     if (strcmp(second_argument, "-") == 0)
     {
@@ -124,7 +131,7 @@ void check_builtin(char *user_args[], int argument_count)
     // TODO: cd - breaks for garbage value
     set_pwd();
   }
-  return;
+  return builtin_found;
 }
 
 bool check_exit(char *user_args[])

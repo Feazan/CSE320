@@ -2,11 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <readline/readline.h>
 
 #include "sfish.h"
 #include "debug.h"
+
+volatile sig_atomic_t pid;
 
 int main(int argc, char *argv[], char* envp[])
 {
@@ -14,6 +17,14 @@ int main(int argc, char *argv[], char* envp[])
     int arg_count;
     char **arg_vector;
     bool exited = false;
+    bool builtin_found = false;
+
+    sigset_t mask, prev;
+
+    Signal(SIGCHLD, sigchld_handler);
+    Signal(SIGINT, sigint_handler);
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGCHLD);
 
     if(!isatty(STDIN_FILENO))
     {
@@ -47,10 +58,20 @@ int main(int argc, char *argv[], char* envp[])
             // arg_vector stores an array of the users input
             arg_vector = readline_parse(input, arg_count);
 
-            check_builtin(arg_vector, arg_count);
+            builtin_found = check_builtin(arg_vector, arg_count);
             exited = check_exit(arg_vector);
 
-            executables(arg_vector, arg_count);
+            Sigprocmask(SIG_BLOCK, &mask, &prev);
+
+            if (!builtin_found)
+            {
+                run_executable(arg_vector, arg_count);
+                pid = 0;
+                while (!pid)
+                    Sigsuspend(&prev);
+            }
+
+            Sigprocmask(SIG_SETMASK, &prev, NULL);
         }
 
         // Currently nothing is implemented

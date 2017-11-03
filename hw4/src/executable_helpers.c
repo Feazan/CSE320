@@ -1,13 +1,4 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <signal.h>
-#include <wait.h>
-#include <errno.h>
 #include "sfish.h"
-#include <readline/readline.h>
 
 volatile sig_atomic_t pid;
 
@@ -30,6 +21,7 @@ handler_t *Signal(int signum, handler_t *handler)
     return (old_action.sa_handler);
 }
 
+// TODO: Need a loop for multiple jobs
 void sigchld_handler(int s)
 {
     int olderrno = errno;

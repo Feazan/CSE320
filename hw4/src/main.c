@@ -1,14 +1,4 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <signal.h>
-#include <stdbool.h>
-#include <readline/readline.h>
-#include <wait.h>
-
 #include "sfish.h"
-#include "debug.h"
 
 volatile sig_atomic_t pid;
 
@@ -25,7 +15,7 @@ int main(int argc, char *argv[], char* envp[])
     Signal(SIGCHLD, sigchld_handler);
     Signal(SIGINT, sigint_handler);
     sigemptyset(&mask);
-    sigaddset(&mask, ~SIGCHLD);
+    sigaddset(&mask, SIGCHLD);
 
     if(!isatty(STDIN_FILENO))
     {
@@ -54,11 +44,15 @@ int main(int argc, char *argv[], char* envp[])
 
         if(strcmp(input, "") != 0)
         {
-
             // arg_count stores the number of user arguments
             arg_count = num_args(input);
             // arg_vector stores an array of the users input
             arg_vector = readline_parse(input, arg_count);
+
+            int test = 0;
+            test = redirection_index(arg_vector, arg_count);
+            if (test)
+            {}
 
             builtin_found = check_builtin(arg_vector, arg_count);
             exited = check_exit(arg_vector);
@@ -68,10 +62,12 @@ int main(int argc, char *argv[], char* envp[])
                 Sigprocmask(SIG_BLOCK, &mask, &prev);
                 if ((Fork()) == 0)
                 {
+                    Sigprocmask(SIG_SETMASK, &prev, NULL);
+                    // REDIRECTION OCCURS HERE BEFORE EXECVP
                     if (execvp(arg_vector[0], arg_vector) < 0)
                     {
                         printf("%s\n", "Command Not Found");
-                        exit(0);
+                        _exit(0);
                     }
                 }
 
@@ -79,7 +75,6 @@ int main(int argc, char *argv[], char* envp[])
                 while (!pid)
                 {
                     Sigsuspend(&prev);
-                    //pid = waitpid(-1, NULL, 0);
                 }
 
                 Sigprocmask(SIG_SETMASK, &prev, NULL);

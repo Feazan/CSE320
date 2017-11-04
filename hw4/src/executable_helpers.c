@@ -5,7 +5,6 @@ volatile sig_atomic_t pid;
 void unix_error(char *msg) /* Unix-style error */
 {
     fprintf(stderr, "%s: %s\n", msg, strerror(errno));
-    exit(0);
 }
 
 handler_t *Signal(int signum, handler_t *handler)

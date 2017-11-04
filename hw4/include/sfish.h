@@ -25,6 +25,10 @@
 #include <fcntl.h>
 // Includes-----------------------------------------------
 
+#define MAXARG 256
+
+int pipe_num;
+volatile sig_atomic_t pid;
 
 // Builtin Helpers ---------------------------------------
 int num_args(char *source);
@@ -36,7 +40,6 @@ void set_pwd();
 // Builtin Helpers ---------------------------------------
 
 // Executables Helpers -----------------------------------
-extern volatile sig_atomic_t pid;
 typedef void handler_t(int);
 
 void sigchld_handler(int s);
@@ -55,5 +58,11 @@ int in_redirect(char *user_args[], int arg_count);
 bool validate_args(char *user_args[], int arg_count, int redirect_pos);
 void redirection(char *user_args[], int in_pos, int out_pos);
 // Redirection Helpers -----------------------------------
+
+// Pipe Helpers -----------------------------------
+void run_pipe(char *user_args[], int arg_count, char* input);
+int num_pipes(char *user_args[], int arg_count);
+char** pipe_tok(char *source, int size);
+// Pipe Helpers -----------------------------------
 
 #endif

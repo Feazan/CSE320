@@ -42,7 +42,7 @@ char** readline_parse(char *source, int size)
 {
   // local variables
   int i = 0;
-  char **argv = malloc(size * sizeof(char *));
+  char **argv = malloc(size * sizeof(char *) + 10);
   // TODO: Don't hardcode size
   char source_copy[1024];
   char *my_token;

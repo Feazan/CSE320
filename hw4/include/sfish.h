@@ -16,10 +16,13 @@
 #include <string.h>
 #include <stdbool.h>
 #include <signal.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include <errno.h>
 #include <readline/readline.h>
 #include "debug.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 // Includes-----------------------------------------------
 
 
@@ -47,8 +50,10 @@ int Sigsuspend(const sigset_t *set);
 // Executables Helpers -----------------------------------
 
 // Redirection Helpers -----------------------------------
-int redirection_index(char *user_args[], int argument_count);
-char* readjust_args(char *user_args[], int redirect_index);
+int out_redirect(char *user_args[], int arg_count);
+int in_redirect(char *user_args[], int arg_count);
+bool validate_args(char *user_args[], int arg_count, int redirect_pos);
+void redirection(char *user_args[], int in_pos, int out_pos);
 // Redirection Helpers -----------------------------------
 
 #endif

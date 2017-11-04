@@ -49,11 +49,6 @@ int main(int argc, char *argv[], char* envp[])
             // arg_vector stores an array of the users input
             arg_vector = readline_parse(input, arg_count);
 
-            int test = 0;
-            test = redirection_index(arg_vector, arg_count);
-            if (test)
-            {}
-
             builtin_found = check_builtin(arg_vector, arg_count);
             exited = check_exit(arg_vector);
 
@@ -64,6 +59,21 @@ int main(int argc, char *argv[], char* envp[])
                 {
                     Sigprocmask(SIG_SETMASK, &prev, NULL);
                     // REDIRECTION OCCURS HERE BEFORE EXECVP
+                    int in = in_redirect(arg_vector, arg_count);
+                    int out = out_redirect(arg_vector, arg_count);
+
+                    if (in != -1 || out != -1)
+                    {
+                        if (in != -1 && out == -1)
+                        {
+                            arg_vector[in] = NULL;
+                        }
+                        if (in == -1 && out != -1)
+                        {
+                            arg_vector[out] = NULL;
+                        }
+                        redirection(arg_vector, in, out);
+                    }
                     if (execvp(arg_vector[0], arg_vector) < 0)
                     {
                         printf("%s\n", "Command Not Found");

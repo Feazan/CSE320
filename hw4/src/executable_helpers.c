@@ -1,7 +1,5 @@
 #include "sfish.h"
 
-volatile sig_atomic_t pid;
-
 void unix_error(char *msg) /* Unix-style error */
 {
     fprintf(stderr, "%s: %s\n", msg, strerror(errno));
@@ -16,7 +14,7 @@ handler_t *Signal(int signum, handler_t *handler)
     action.sa_flags = SA_RESTART; /* Restart syscalls if possible */
 
     if (sigaction(signum, &action, &old_action) < 0)
-    unix_error("Signal error");
+        unix_error("Signal error");
     return (old_action.sa_handler);
 }
 

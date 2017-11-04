@@ -5,10 +5,16 @@ void print_prompt()
   int prompt_len;
   char cwd_prompt[1024];
 
-  char* tilda = "~";
-  write(1, tilda, 1);
-  getcwd(cwd_prompt, (1024 * sizeof(char)));
+  char *home = getenv("HOME");
+  getcwd(cwd_prompt, (MAXARG * sizeof(char*)));
+  //printf("THIS IS CWD: %s THIS IS HOME: %s\n", cwd_prompt, home);
 
+  if (strstr(cwd_prompt, home) != NULL)
+  {
+    char* tilda = "~";
+    write(1, tilda, 1);
+    strcpy(cwd_prompt, (cwd_prompt + strlen(home)));
+  }
   prompt_len = strlen(cwd_prompt);
   write(1, cwd_prompt, prompt_len);
 }
@@ -82,17 +88,41 @@ bool check_builtin(char *user_args[], int argument_count)
 
   if (strcmp(user_args[0], "help") == 0)
   {
-    printf("%s\n", "Do you need help?!");
-    builtin_found = true;
+    if (argument_count > 2)
+    {
+      if ((strcmp(user_args[1], ">") == 0) && user_args[2] != NULL)
+      {
+        help_redirect = true;
+        builtin_found = false;
+        return builtin_found;
+      }
+    }
+    else
+    {
+      printf("%s\n", "Do you need help?!");
+      builtin_found = true;
+    }
   }
   else if (strcmp(user_args[0], "pwd") == 0)
   {
-    char *ptr;
-    char buf [1024];
-    ptr = getcwd(buf, sizeof(buf));
-    builtin_found = true;
+    if (argument_count > 2)
+    {
+      if ((strcmp(user_args[1], ">") == 0) && user_args[2] != NULL)
+      {
+        pwd_redirect = true;
+        builtin_found = false;
+        return builtin_found;
+      }
+    }
+    else
+    {
+      char *ptr;
+      char buf [1024];
+      ptr = getcwd(buf, sizeof(buf));
+      builtin_found = true;
 
-    printf("The filepath is: %s\n", ptr);
+      printf("%s\n",ptr);
+    }
   }
   else if (strcmp(user_args[0], "cd") == 0 && argument_count == 1)
   {
@@ -112,6 +142,11 @@ bool check_builtin(char *user_args[], int argument_count)
     {
       chdir(getenv("OLDPWD"));
       setenv("OLDPWD", getenv("PWD"), 1);
+      char *ptr;
+      char buf [1024];
+      ptr = getcwd(buf, sizeof(buf));
+
+      printf("%s\n",ptr);
     }
     else
     {
@@ -121,7 +156,7 @@ bool check_builtin(char *user_args[], int argument_count)
 
     if(chdir_value == -1)
     {
-      perror("Some error");
+      perror("cd Error");
     }
 
     // TODO: cd - breaks for garbage value

@@ -36,11 +36,14 @@ int main(int argc, char *argv[], char* envp[])
 
         // If EOF is read (aka ^D) readline returns NULL
         if(input == NULL) {
+            printf("%s\n", "");
             continue;
         }
 
         if(strcmp(input, "") != 0)
         {
+            help_redirect = false;
+            pwd_redirect = false;
             pipe_num = 0;
             char **process = calloc(MAXARG, sizeof(char*));
             process = pipe_tok(input, MAXARG);
@@ -70,13 +73,13 @@ int main(int argc, char *argv[], char* envp[])
                 builtin_found = check_builtin(arg_vector, arg_count);
                 exited = check_exit(arg_vector);
 
-                if (!builtin_found)
+                if (!builtin_found && !exited)
                 {
                     Sigprocmask(SIG_BLOCK, &mask, &prev);
                     if ((Fork()) == 0)
                     {
                         Sigprocmask(SIG_SETMASK, &prev, NULL);
-                    // REDIRECTION OCCURS HERE BEFORE EXECVP
+                        // REDIRECTION OCCURS HERE BEFORE EXECVP
                         int in = in_redirect(arg_vector, arg_count);
                         int out = out_redirect(arg_vector, arg_count);
 
@@ -92,11 +95,26 @@ int main(int argc, char *argv[], char* envp[])
                             }
                             redirection(arg_vector, in, out);
                         }
-
-                        if (execvp(arg_vector[0], arg_vector) < 0)
+                        if (help_redirect == true)
                         {
-                            printf("%s\n", "Command Not Found");
+                            write(1, "Do you need help?!", strlen("Do you need help?!"));
                             _exit(0);
+                        }
+                        else if (pwd_redirect == true)
+                        {
+                            char *ptr;
+                            char buf [1024];
+                            ptr = getcwd(buf, sizeof(buf));
+
+                            write(1, ptr, strlen(ptr));
+                            _exit(0);
+                        }
+                        else if (execvp(arg_vector[0], arg_vector) < 0)
+                        {
+                            char buffer[50];
+                            sprintf(buffer, EXEC_ERROR, input);
+                            write(1, buffer, strlen(buffer));
+                            _exit(1);
                         }
                     }
 
@@ -112,7 +130,7 @@ int main(int argc, char *argv[], char* envp[])
         }
 
         // Currently nothing is implemented
-        printf(EXEC_NOT_FOUND, input);
+        //printf(EXEC_NOT_FOUND, input);
 
         // In order to call the system exit(0) function
         if (exited == true)

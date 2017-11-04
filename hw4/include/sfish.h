@@ -29,6 +29,8 @@
 
 int pipe_num;
 volatile sig_atomic_t pid;
+bool help_redirect;
+bool pwd_redirect;
 
 // Builtin Helpers ---------------------------------------
 int num_args(char *source);

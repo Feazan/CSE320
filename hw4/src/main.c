@@ -29,7 +29,7 @@ int main(int argc, char *argv[], char* envp[])
         print_prompt();
         input = readline(" :: fyaseen >> ");
 
- /*       write(1, "\e[s", strlen("\e[s"));
+ /*     write(1, "\e[s", strlen("\e[s"));
         write(1, "\e[20;10H", strlen("\e[20;10H"));
         write(1, "SomeText", strlen("SomeText"));
         write(1, "\e[u", strlen("\e[u"));*/
@@ -56,7 +56,6 @@ int main(int argc, char *argv[], char* envp[])
                     char **p_vector = calloc(strlen(process[i] + 10), sizeof(char*));
                     // arg_count stores the number of user arguments
                     single_pc = num_args(process[i]);
-                    printf("PROCESS[i]:%s\n", process[i]);
                     // arg_vector stores an array of the users input
                     p_vector = readline_parse(process[i], single_pc);
                     //debug("single_pc: %d", single_pc);

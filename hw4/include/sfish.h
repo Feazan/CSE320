@@ -26,6 +26,7 @@
 // Includes-----------------------------------------------
 
 #define MAXARG 256
+#define RED "\x1b[31m"
 
 int pipe_num;
 volatile sig_atomic_t pid;

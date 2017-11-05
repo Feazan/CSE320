@@ -16,6 +16,7 @@ void print_prompt()
     strcpy(cwd_prompt, (cwd_prompt + strlen(home)));
   }
   prompt_len = strlen(cwd_prompt);
+  //printf("\x1b[31m%s", cwd_prompt);
   write(1, cwd_prompt, prompt_len);
 }
 
@@ -156,7 +157,10 @@ bool check_builtin(char *user_args[], int argument_count)
 
     if(chdir_value == -1)
     {
-      perror("cd Error");
+      char buffer[50];
+      sprintf(buffer, BUILTIN_ERROR, user_args[0]);
+      write(1, buffer, strlen(buffer));
+      //exit(1);
     }
 
     // TODO: cd - breaks for garbage value

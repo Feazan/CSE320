@@ -2,7 +2,10 @@
 
 void unix_error(char *msg) /* Unix-style error */
 {
-    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    //fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    char buffer[50];
+    sprintf(buffer, EXEC_ERROR, msg);
+    write(1, buffer, strlen(buffer));
 }
 
 handler_t *Signal(int signum, handler_t *handler)

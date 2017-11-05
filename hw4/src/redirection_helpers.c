@@ -85,17 +85,31 @@ void redirection(char *user_args[], int in_pos, int out_pos)
 {
     if (in_pos != -1)
     {
-        int fd;
-        fd = open(user_args[in_pos + 1], O_RDONLY, 0);
-        dup2(fd, STDIN_FILENO);
-        close(fd);
+        int fd0;
+        fd0 = open(user_args[in_pos + 1], O_RDONLY, 0);
+        if (fd0 < 0)
+        {
+          char buffer[50];
+          sprintf(buffer, SYNTAX_ERROR, user_args[0]);
+          write(1, buffer, strlen(buffer));
+          _exit(1);
+        }
+        dup2(fd0, STDIN_FILENO);
+        close(fd0);
     }
 
     if (out_pos != -1)
     {
-        int fd;
-        fd = creat(user_args[out_pos + 1], 0644);
-        dup2(fd, STDOUT_FILENO);
-        close(fd);
+        int fd1;
+        fd1 = creat(user_args[out_pos + 1], 0666);
+        if (fd1 < 0)
+        {
+          char buffer[50];
+          sprintf(buffer, SYNTAX_ERROR, user_args[0]);
+          write(1, buffer, strlen(buffer));
+          _exit(1);
+        }
+        dup2(fd1, STDOUT_FILENO);
+        close(fd1);
     }
 }

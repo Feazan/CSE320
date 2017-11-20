@@ -3,7 +3,6 @@
 
 queue_t *create_queue(void)
 {
-    // TODO: How many should there be in the beginning? -- Assume 1
     queue_t *my_queue = calloc(1, sizeof(queue_t));
 
     if (my_queue == NULL
@@ -18,13 +17,13 @@ queue_t *create_queue(void)
 
 bool invalidate_queue(queue_t *self, item_destructor_f destroy_function)
 {
-    // Error case -- TODO: under what condition is destroy function invalid?
+    // Error case
     if (self == NULL || destroy_function == NULL)
     {
         errno = EINVAL;
         return false;
     }
-
+    pthread_mutex_lock(&self->lock);
     self->invalid = true;
     queue_node_t *temp;
     while(self->front != NULL)
@@ -37,7 +36,7 @@ bool invalidate_queue(queue_t *self, item_destructor_f destroy_function)
 
     // TODO: Does this need to be NULL?
     self->rear = NULL;
-    // If self equals NULL, or destroy_function is invalid
+    pthread_mutex_unlock(&self->lock);
     return true;
 }
 
@@ -71,6 +70,25 @@ bool enqueue(queue_t *self, void *item)
     return true;
 }
 
-void *dequeue(queue_t *self) {
-    return NULL;
+void *dequeue(queue_t *self)
+{
+    if (self == NULL || self->invalid == true)
+    {
+        errno = EINVAL;
+        return NULL;
+    }
+
+    queue_node_t *temp;
+    queue_node_t *node_to_return;
+
+    // TODO: Is this the correct way to lock and unlock
+    sem_wait(&self->items);
+    pthread_mutex_lock(&self->lock);
+    node_to_return = self->front;
+    temp = self->front->next;
+    free(self->front);
+    self->front = temp;
+    pthread_mutex_unlock(&self->lock);
+
+    return node_to_return;
 }

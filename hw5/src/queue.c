@@ -18,7 +18,21 @@ queue_t *create_queue(void)
 
 bool invalidate_queue(queue_t *self, item_destructor_f destroy_function)
 {
-    return false;
+    // Error case
+    if (self == NULL)
+    {
+        errno = EINVAL;
+        return false;
+    }
+
+    self->invalid = true;
+    while(self->front != NULL)
+    {
+        destroy_function(&self->front->item);
+        self->front = self->front->next;
+    }
+    // If self equals NULL, or destroy_function is invalid
+    return true;
 }
 
 bool enqueue(queue_t *self, void *item) {

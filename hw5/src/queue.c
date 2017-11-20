@@ -18,8 +18,8 @@ queue_t *create_queue(void)
 
 bool invalidate_queue(queue_t *self, item_destructor_f destroy_function)
 {
-    // Error case
-    if (self == NULL)
+    // Error case -- TODO: under what condition is destroy function invalid?
+    if (self == NULL || destroy_function == NULL)
     {
         errno = EINVAL;
         return false;
@@ -35,13 +35,37 @@ bool invalidate_queue(queue_t *self, item_destructor_f destroy_function)
         self->front = temp;
     }
 
+    // TODO: Does this need to be NULL?
     self->rear = NULL;
     // If self equals NULL, or destroy_function is invalid
     return true;
 }
 
-bool enqueue(queue_t *self, void *item) {
-    return false;
+bool enqueue(queue_t *self, void *item)
+{
+    if (self == NULL || self->invalid == true || item == NULL)
+    {
+        errno = EINVAL;
+        return false;
+    }
+
+    queue_node_t *node_to_insert;
+    node_to_insert = calloc(1, sizeof(queue_node_t));\
+    node_to_insert->item = item;
+
+    // Insert to queue
+    if (self->front == NULL)
+    {
+        self->front = node_to_insert;
+        self->rear = node_to_insert;
+    }
+    else
+    {
+        self->rear->next = node_to_insert;
+        self->rear = node_to_insert;
+    }
+
+    return true;
 }
 
 void *dequeue(queue_t *self) {

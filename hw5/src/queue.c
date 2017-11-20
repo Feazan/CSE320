@@ -29,7 +29,7 @@ bool invalidate_queue(queue_t *self, item_destructor_f destroy_function)
     queue_node_t *temp;
     while(self->front != NULL)
     {
-        destroy_function(&self->front->item);
+        destroy_function(self->front->item);
         temp = self->front->next;
         free(self->front);
         self->front = temp;
@@ -50,9 +50,10 @@ bool enqueue(queue_t *self, void *item)
     }
 
     queue_node_t *node_to_insert;
-    node_to_insert = calloc(1, sizeof(queue_node_t));\
+    node_to_insert = calloc(1, sizeof(queue_node_t));
     node_to_insert->item = item;
 
+    pthread_mutex_lock(&self->lock);
     // Insert to queue
     if (self->front == NULL)
     {
@@ -64,6 +65,8 @@ bool enqueue(queue_t *self, void *item)
         self->rear->next = node_to_insert;
         self->rear = node_to_insert;
     }
+    sem_post(&self->items);
+    pthread_mutex_unlock(&self->lock);
 
     return true;
 }

@@ -26,11 +26,16 @@ bool invalidate_queue(queue_t *self, item_destructor_f destroy_function)
     }
 
     self->invalid = true;
+    queue_node_t *temp;
     while(self->front != NULL)
     {
         destroy_function(&self->front->item);
-        self->front = self->front->next;
+        temp = self->front->next;
+        free(self->front);
+        self->front = temp;
     }
+
+    self->rear = NULL;
     // If self equals NULL, or destroy_function is invalid
     return true;
 }

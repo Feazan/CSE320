@@ -34,7 +34,6 @@ bool invalidate_queue(queue_t *self, item_destructor_f destroy_function)
         self->front = temp;
     }
 
-    // TODO: Does this need to be NULL?
     self->rear = NULL;
     pthread_mutex_unlock(&self->lock);
     return true;
@@ -81,7 +80,6 @@ void *dequeue(queue_t *self)
     queue_node_t *temp;
     queue_node_t *node_to_return;
 
-    // TODO: Is this the correct way to lock and unlock
     sem_wait(&self->items);
     pthread_mutex_lock(&self->lock);
     node_to_return = self->front;

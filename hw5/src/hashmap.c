@@ -4,7 +4,9 @@
 #define MAP_VAL(base, len) (map_val_t) {.val_base = base, .val_len = len}
 #define MAP_NODE(key_arg, val_arg, tombstone_arg) (map_node_t) {.key = key_arg, .val = val_arg, .tombstone = tombstone_arg}
 
-hashmap_t *create_map(uint32_t capacity, hash_func_f hash_function, destructor_f destroy_function) {
+hashmap_t *create_map(uint32_t capacity, hash_func_f hash_function, destructor_f destroy_function)
+{
+
     return NULL;
 }
 

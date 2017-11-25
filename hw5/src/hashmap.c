@@ -1,12 +1,12 @@
 #include "utils.h"
-#include <errno.h>
-#include <string.h>
+#include <hashmap_helpers.h>
+
 
 #define MAP_KEY(base, len) (map_key_t) {.key_base = base, .key_len = len}
 #define MAP_VAL(base, len) (map_val_t) {.val_base = base, .val_len = len}
 #define MAP_NODE(key_arg, val_arg, tombstone_arg) (map_node_t) {.key = key_arg, .val = val_arg, .tombstone = tombstone_arg}
 
-int indexof_duplicate_key(hashmap_t *self, map_key_t key);
+
 
 hashmap_t *create_map(uint32_t capacity, hash_func_f hash_function, destructor_f destroy_function)
 {
@@ -47,17 +47,21 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
     // force entry into hashmap, if full
     if (force == true && self->capacity == self->size)
     {
+        pthread_mutex_lock(&(self->write_lock));
         self->nodes[index].key = key;
         self->nodes[index].val = val;
+        pthread_mutex_unlock(&(self->write_lock));
         return true;
     }
 
     // Simplest case -- Check if index is occupied
     if (self->nodes[index].key.key_base == NULL)
     {
+        pthread_mutex_lock(&(self->write_lock));
         self->nodes[index].key = key;
         self->nodes[index].val = val;
-        // TODO: Maybe this can be deleted
+        self->size++;
+        pthread_mutex_unlock(&(self->write_lock));
         return true;
     }
     else // Means that the index is occupied -- COLLISION
@@ -66,43 +70,37 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
         if ((duplicate_key_index = indexof_duplicate_key(self, key)) != -1)
         {
             // Key was found, index needs updating
+            pthread_mutex_lock(&(self->write_lock));
             self->nodes[duplicate_key_index].key = key;
             self->nodes[duplicate_key_index].val = val;
+            pthread_mutex_unlock(&(self->write_lock));
             return true;
         }
         // A duplicate key was not found
-        // TODO: does this cover all edge cases?
-        while(self->nodes[index].key.key_base != NULL)
+        int capacity = self->capacity;
+        while(index <= capacity)
         {
-            // Check the next index
-            index++;
-            if (index > self->capacity)
-                index = 0;
-
-            if (self->nodes[index].tombstone == true)
+            if (index > (self->capacity - 1))
             {
-                if ((duplicate_key_index = indexof_duplicate_key(self, key)) != -1)
-                {
-                    // Key was found, index needs updating
-                    self->nodes[duplicate_key_index].key = key;
-                    self->nodes[duplicate_key_index].val = val;
-                    return true;
-                }
-                else
-                {
-                    self->nodes[index].key = key;
-                    self->nodes[index].val = val;
-                    self->nodes[index].tombstone = false;
-                    return true;
-                }
+                index = 0;
+                // TODO: Do I need this line?
+                capacity = get_index(self, key);
             }
+
+            if (self->nodes[index].key.key_base == NULL
+                || self->nodes[index].tombstone == true)
+            {
+                pthread_mutex_lock(&(self->write_lock));
+                self->nodes[index].key = key;
+                self->nodes[index].val = val;
+                self->nodes[index].tombstone = false;
+                self->size++;
+                pthread_mutex_unlock(&(self->write_lock));
+                return true;
+            }
+            index++;
         }
-
-        // If I break out of this loop than key_base == NULL
-        self->nodes[index].key = key;
-        self->nodes[index].val = val;
     }
-
     return false;
 }
 
@@ -130,7 +128,7 @@ int indexof_duplicate_key(hashmap_t *self, map_key_t key)
     {
         if(self->nodes[i].key.key_len == key.key_len)
         {
-            if (memcmp(self->nodes[i].key.key_base, key.key_base, key.key_len == 0))
+            if (memcmp(self->nodes[i].key.key_base, key.key_base, key.key_len) == 0)
             {
                 index_to_update = i;
                 break;

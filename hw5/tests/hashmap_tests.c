@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 #include "hashmap.h"
-#define NUM_THREADS 100
+#define NUM_THREADS 2500
 #define MAP_KEY(kbase, klen) (map_key_t) {.key_base = kbase, .key_len = klen}
 #define MAP_VAL(vbase, vlen) (map_val_t) {.val_base = vbase, .val_len = vlen}
 
@@ -84,4 +84,25 @@ Test(map_suite, 02_multithreaded, .timeout = 2, .init = map_init, .fini = map_fi
 
     int num_items = global_map->size;
     cr_assert_eq(num_items, NUM_THREADS, "Had %d items in map. Expected %d", num_items, NUM_THREADS);
+}
+
+Test(map_suite, 03_put, .timeout = 2, .init = map_init, .fini = map_fini)
+{
+   // put
+    for(int index = 0; index < 5; index++){
+
+        int *key_ptr = malloc(sizeof(int));
+        int *val_ptr = malloc(sizeof(int));
+        *key_ptr = index;
+        *val_ptr = index * 2;
+        map_insert_t *insert = malloc(sizeof(map_insert_t));
+        insert->key_ptr = key_ptr;
+        insert->val_ptr = val_ptr;
+        put(global_map, MAP_KEY(insert->key_ptr, sizeof(int)), MAP_VAL(insert->val_ptr, sizeof(int)), false);
+
+    }
+
+    int num_items = global_map->size;
+    cr_assert_eq(num_items, 5, "Had %d items in map that has a capacity of %d. Expected %d ", num_items, global_map->capacity, 5);
+
 }

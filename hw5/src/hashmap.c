@@ -121,6 +121,7 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
 
 map_val_t get(hashmap_t *self, map_key_t key)
 {
+    // TODO: pthread_mutex_lock(&(self->fields_lock)); ++self->num_readers;
     if (self == NULL || key.key_len <= 0)
     {
         errno = EINVAL;
@@ -149,7 +150,9 @@ map_val_t get(hashmap_t *self, map_key_t key)
     return MAP_VAL(val_to_return.val_base, val_to_return.val_len);
 }
 
-map_node_t delete(hashmap_t *self, map_key_t key) {
+map_node_t delete(hashmap_t *self, map_key_t key)
+{
+
     return MAP_NODE(MAP_KEY(NULL, 0), MAP_VAL(NULL, 0), false);
 }
 

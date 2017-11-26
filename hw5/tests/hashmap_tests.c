@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 #include "hashmap.h"
-#define NUM_THREADS 2500
+#define NUM_THREADS 100
 #define MAP_KEY(kbase, klen) (map_key_t) {.key_base = kbase, .key_len = klen}
 #define MAP_VAL(vbase, vlen) (map_val_t) {.val_base = vbase, .val_len = vlen}
 
@@ -121,19 +121,18 @@ Test(map_suite, 00_get, .timeout = 2, .init = map_init, .fini = map_fini)
         insert->key_ptr = key_ptr;
         insert->val_ptr = val_ptr;
         put(global_map, MAP_KEY(insert->key_ptr, sizeof(int)), MAP_VAL(insert->val_ptr, sizeof(int)), false);
-        printf("%ld\n", global_map->nodes[index].val.val_len);
+        //printf("%ld\n", global_map->nodes[index].val.val_len);
     }
 
     // Now try and get some values
     int *key_ptr = malloc(sizeof(int));
-    *key_ptr = 3;
+    *key_ptr = 4;
     insert->key_ptr = key_ptr;
     map_val_t val_to_return = get(global_map, MAP_KEY(insert->key_ptr, sizeof(int)));
 
     int *val_of_val;
     val_of_val = (int *)(val_to_return.val_base);
-    printf("Value inserted into map: %d\n", *((int *)val_of_val));
+    //printf("Value inserted into map: %d\n", *((int *)val_of_val));
 
-    cr_assert_eq(val_of_val, 8, "Expected: %d -- Actual: %d", 8, val_of_val);
-
+    cr_assert_eq(*((int *)val_of_val), 8, "Expected: %d -- Actual: %d", 8, *((int *)val_of_val));
 }

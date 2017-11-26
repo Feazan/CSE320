@@ -89,8 +89,8 @@ Test(map_suite, 02_multithreaded, .timeout = 2, .init = map_init, .fini = map_fi
 Test(map_suite, 03_put, .timeout = 2, .init = map_init, .fini = map_fini)
 {
    // put
-    for(int index = 0; index < 5; index++){
-
+    for(int index = 0; index < 5; index++)
+    {
         int *key_ptr = malloc(sizeof(int));
         int *val_ptr = malloc(sizeof(int));
         *key_ptr = index;
@@ -99,10 +99,41 @@ Test(map_suite, 03_put, .timeout = 2, .init = map_init, .fini = map_fini)
         insert->key_ptr = key_ptr;
         insert->val_ptr = val_ptr;
         put(global_map, MAP_KEY(insert->key_ptr, sizeof(int)), MAP_VAL(insert->val_ptr, sizeof(int)), false);
-
     }
 
     int num_items = global_map->size;
     cr_assert_eq(num_items, 5, "Had %d items in map that has a capacity of %d. Expected %d ", num_items, global_map->capacity, 5);
+
+}
+
+Test(map_suite, 00_get, .timeout = 2, .init = map_init, .fini = map_fini)
+{
+    map_insert_t *insert = malloc(sizeof(map_insert_t));
+
+    // First put some values into the map
+    for(int index = 0; index < 5; index++)
+    {
+        int *key_ptr = malloc(sizeof(int));
+        int *val_ptr = malloc(sizeof(int));
+        *key_ptr = index;
+        *val_ptr = index * 2;
+        map_insert_t *insert = malloc(sizeof(map_insert_t));
+        insert->key_ptr = key_ptr;
+        insert->val_ptr = val_ptr;
+        put(global_map, MAP_KEY(insert->key_ptr, sizeof(int)), MAP_VAL(insert->val_ptr, sizeof(int)), false);
+        printf("%ld\n", global_map->nodes[index].val.val_len);
+    }
+
+    // Now try and get some values
+    int *key_ptr = malloc(sizeof(int));
+    *key_ptr = 3;
+    insert->key_ptr = key_ptr;
+    map_val_t val_to_return = get(global_map, MAP_KEY(insert->key_ptr, sizeof(int)));
+
+    int *val_of_val;
+    val_of_val = (int *)(val_to_return.val_base);
+    printf("Value inserted into map: %d\n", *((int *)val_of_val));
+
+    cr_assert_eq(val_of_val, 8, "Expected: %d -- Actual: %d", 8, val_of_val);
 
 }

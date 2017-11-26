@@ -4,4 +4,4 @@
 #include <stdio.h>
 
 
-int indexof_duplicate_key(hashmap_t *self, map_key_t key);
+int index_of_key(hashmap_t *self, map_key_t key);

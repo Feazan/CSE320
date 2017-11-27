@@ -71,6 +71,7 @@ bool enqueue(queue_t *self, void *item)
 
 void *dequeue(queue_t *self)
 {
+    // TODO: if all items were deleted
     if (self == NULL || self->invalid == true)
     {
         errno = EINVAL;

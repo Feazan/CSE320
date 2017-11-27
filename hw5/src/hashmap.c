@@ -186,12 +186,54 @@ map_node_t delete(hashmap_t *self, map_key_t key)
         , MAP_VAL(deleted_node.val.val_base, deleted_node.val.val_len), false);
 }
 
-bool clear_map(hashmap_t *self) {
-	return false;
+bool clear_map(hashmap_t *self)
+{
+    if (self == NULL || self->invalid == true)
+    {
+        errno = EINVAL;
+        return false;
+    }
+
+    // TODO: Does the size need to be decremented?
+    // TODO: Is this the correct place to put the locks
+    pthread_mutex_lock(&(self->write_lock));
+    for (int i = 0; i < self->capacity; i++)
+    {
+        if (self->nodes[i].key.key_base != NULL)
+        {
+            self->destroy_function(self->nodes[i].key, self->nodes[i].val);
+            self->size--;
+            self->nodes[i].key.key_base = NULL;
+            self->nodes[i].val.val_base = NULL;
+        }
+    }
+    pthread_mutex_unlock(&(self->write_lock));
+	return true;
 }
 
-bool invalidate_map(hashmap_t *self) {
-    return false;
+bool invalidate_map(hashmap_t *self)
+{
+    if (self == NULL)
+    {
+        errno = EINVAL;
+        return false;
+    }
+
+    pthread_mutex_lock(&(self->write_lock));
+    for (int i = 0; i < self->capacity; i++)
+    {
+        if (self->nodes[i].key.key_base != NULL)
+        {
+            self->destroy_function(self->nodes[i].key, self->nodes[i].val);
+            self->size--;
+            self->nodes[i].key.key_base = NULL;
+            self->nodes[i].val.val_base = NULL;
+        }
+    }
+    free(self->nodes);
+    self->invalid = true;
+    pthread_mutex_unlock(&(self->write_lock));
+    return true;
 }
 
 int index_of_key(hashmap_t *self, map_key_t key)

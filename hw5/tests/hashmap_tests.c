@@ -4,7 +4,6 @@
 #include <errno.h>
 #include <stdio.h>
 #include <debug.h>
-
 #include "hashmap.h"
 #define NUM_THREADS 2500
 #define MAP_KEY(kbase, klen) (map_key_t) {.key_base = kbase, .key_len = klen}
@@ -87,6 +86,42 @@ Test(map_suite, 02_multithreaded, .timeout = 2, .init = map_init, .fini = map_fi
     int num_items = global_map->size;
     cr_assert_eq(num_items, NUM_THREADS, "Had %d items in map. Expected %d", num_items, NUM_THREADS);
 }
+
+/////////////
+
+Test(map_suite, 00_get, .timeout = 2, .init = map_init, .fini = map_fini)
+{
+    map_insert_t *insert = malloc(sizeof(map_insert_t));
+
+    // First put some values into the map
+    for(int index = 0; index < 5; index++)
+    {
+        int *key_ptr = malloc(sizeof(int));
+        int *val_ptr = malloc(sizeof(int));
+        *key_ptr = index;
+        *val_ptr = index * 2;
+        map_insert_t *insert = malloc(sizeof(map_insert_t));
+        insert->key_ptr = key_ptr;
+        insert->val_ptr = val_ptr;
+        put(global_map, MAP_KEY(insert->key_ptr, sizeof(int)), MAP_VAL(insert->val_ptr, sizeof(int)), false);
+        //printf("%ld\n", global_map->nodes[index].val.val_len);
+    }
+
+    // Now try and get some values
+    int *key_ptr = malloc(sizeof(int));
+    *key_ptr = 4;
+    insert->key_ptr = key_ptr;
+    map_val_t val_to_return = get(global_map, MAP_KEY(insert->key_ptr, sizeof(int)));
+
+    int *val_of_val;
+    val_of_val = (int *)(val_to_return.val_base);
+    //printf("Value inserted into map: %d\n", *((int *)val_of_val));
+
+    cr_assert_eq(*((int *)val_of_val), 8, "Expected: %d -- Actual: %d", 8, *((int *)val_of_val));
+
+}
+
+////////////
 
 Test(map_suite, 03_get, .timeout = 2, .init = map_init, .fini = map_fini) {
     pthread_t thread_ids[NUM_THREADS];
@@ -212,4 +247,48 @@ Test(map_suite, 05_put, .timeout = 2, .init = map_init, .fini = map_fini) {
         cr_assert_eq(*val_of_val, index*2, "Expected %d and got %d.", index*2,val_of_val);
     }
 
+}
+
+void *thread_clear(void *arg) {
+    clear_map(global_map);
+    return NULL;
+}
+
+Test(map_suite, 06_clear, .timeout = 2, .init = map_init, .fini = map_fini){
+    pthread_t thread_ids[NUM_THREADS];
+
+    // spawn NUM_THREADS threads to put elements
+    for(int index = 0; index < NUM_THREADS; index++) {
+        int *key_ptr = malloc(sizeof(int));
+        int *val_ptr = malloc(sizeof(int));
+        *key_ptr = index;
+        *val_ptr = index * 2;
+
+        map_insert_t *insert = malloc(sizeof(map_insert_t));
+        insert->key_ptr = key_ptr;
+        insert->val_ptr = val_ptr;
+
+        if(pthread_create(&thread_ids[index], NULL, thread_put, insert) != 0)
+            exit(EXIT_FAILURE);
+    }
+
+    // wait for threads to die before checking queue
+    for(int index = 0; index < NUM_THREADS; index++) {
+        pthread_join(thread_ids[index], NULL);
+    }
+
+    pthread_t clear_threads[2];
+
+    for(int i = 0; i < 2; i++) {
+        if(pthread_create(&clear_threads[i], NULL, thread_clear, NULL) != 0)
+            exit(EXIT_FAILURE);
+    }
+
+    for(int i = 0; i < 2; i++)
+        pthread_join(clear_threads[i], NULL);
+
+    cr_assert_eq(global_map->size, 0, "Had %d. Expected 0", global_map->size);
+
+    // int num_items = global_map->size;
+    // cr_assert_eq(num_items, 0, "Had %d items in map. Expected %d", num_items, 0);
 }

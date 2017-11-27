@@ -146,14 +146,44 @@ map_val_t get(hashmap_t *self, map_key_t key)
         val_to_return.val_len = self->nodes[key_index].val.val_len;
         pthread_mutex_unlock(&(self->write_lock));
     }
-
     return MAP_VAL(val_to_return.val_base, val_to_return.val_len);
 }
 
 map_node_t delete(hashmap_t *self, map_key_t key)
 {
+    // error cases
+    if (self == NULL || key.key_len <= 0)
+    {
+        errno = EINVAL;
+        return MAP_NODE(MAP_KEY(NULL, 0), MAP_VAL(NULL, 0), false);
+    }
 
-    return MAP_NODE(MAP_KEY(NULL, 0), MAP_VAL(NULL, 0), false);
+    map_node_t deleted_node;
+    // Find index of the element to remove
+    int key_index = index_of_key(self, key);
+
+    if (key_index < 0) // Key was not found in map
+    {
+        return MAP_NODE(MAP_KEY(NULL, 0), MAP_VAL(NULL, 0), false);
+    }
+    else
+    {
+        // TODO: Am I returning correctly?
+        // TODO: The locks are in the wrong place
+        // TODO: Does deleted_node need to be created as a pointer
+        // Node that will be deleted
+        pthread_mutex_lock(&(self->fields_lock));
+        deleted_node.key.key_len = self->nodes[key_index].key.key_len;
+        deleted_node.key.key_base = self->nodes[key_index].key.key_base;
+        deleted_node.val.val_len = self->nodes[key_index].val.val_len;
+        deleted_node.val.val_base = self->nodes[key_index].val.val_base;
+        self->nodes[key_index].tombstone = true;
+        self->size--;
+        pthread_mutex_unlock(&(self->fields_lock));
+    }
+
+    return MAP_NODE(MAP_KEY(deleted_node.key.key_base, deleted_node.key.key_len)
+        , MAP_VAL(deleted_node.val.val_base, deleted_node.val.val_len), false);
 }
 
 bool clear_map(hashmap_t *self) {

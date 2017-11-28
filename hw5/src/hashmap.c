@@ -10,7 +10,6 @@
 
 hashmap_t *create_map(uint32_t capacity, hash_func_f hash_function, destructor_f destroy_function)
 {
-    // TODO: Does this need to by MT-Safe?
     if (capacity < 1
         || hash_function == NULL
         || destroy_function == NULL)
@@ -20,8 +19,6 @@ hashmap_t *create_map(uint32_t capacity, hash_func_f hash_function, destructor_f
     }
 
     hashmap_t *my_hashmap = calloc(1, sizeof(hashmap_t));
-    // TODO: Correct way to calloc? does the calloc for the nodes need to be in a loop?
-    // Where to free this calloc?
     my_hashmap->nodes = calloc(capacity, sizeof(map_node_t));
 
     if (pthread_mutex_init(&my_hashmap->write_lock, 0) != 0
@@ -41,7 +38,6 @@ hashmap_t *create_map(uint32_t capacity, hash_func_f hash_function, destructor_f
 bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
 {
     // error cases
-    // TODO: Can key and val be NULL
     if (self == NULL || key.key_len <= 0 || val.val_len <= 0)
     {
         errno = EINVAL;
@@ -81,6 +77,7 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
     else // Means that the index is occupied -- COLLISION
     {
         // Check if a duplicate key was found
+        // TODO: This needs to be locked correctly
         if ((duplicate_key_index = index_of_key(self, key)) != -1)
         {
             // Key was found, index needs updating
@@ -132,7 +129,9 @@ map_val_t get(hashmap_t *self, map_key_t key)
     int key_index;
 
     // Location of val to find in hashmap
+    pthread_mutex_lock(&(self->fields_lock));
     key_index = index_of_key(self, key);
+    pthread_mutex_unlock(&(self->fields_lock));
 
     if (key_index < 0) // Key was not found in map
     {
@@ -160,7 +159,9 @@ map_node_t delete(hashmap_t *self, map_key_t key)
 
     map_node_t deleted_node;
     // Find index of the element to remove
+    pthread_mutex_lock(&(self->fields_lock));
     int key_index = index_of_key(self, key);
+    pthread_mutex_unlock(&(self->fields_lock));
 
     if (key_index < 0) // Key was not found in map
     {
@@ -168,9 +169,6 @@ map_node_t delete(hashmap_t *self, map_key_t key)
     }
     else
     {
-        // TODO: Am I returning correctly?
-        // TODO: The locks are in the wrong place
-        // TODO: Does deleted_node need to be created as a pointer
         // Node that will be deleted
         pthread_mutex_lock(&(self->fields_lock));
         deleted_node.key.key_len = self->nodes[key_index].key.key_len;
@@ -194,8 +192,6 @@ bool clear_map(hashmap_t *self)
         return false;
     }
 
-    // TODO: Does the size need to be decremented?
-    // TODO: Is this the correct place to put the locks
     pthread_mutex_lock(&(self->write_lock));
     for (int i = 0; i < self->capacity; i++)
     {

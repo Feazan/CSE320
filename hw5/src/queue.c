@@ -81,13 +81,16 @@ void *dequeue(queue_t *self)
     queue_node_t *temp;
     queue_node_t *node_to_return;
 
-    sem_wait(&self->items);
+    sem_wait(&self->items); // TODO: This may need to be on top
     pthread_mutex_lock(&self->lock);
     node_to_return = self->front;
+    void *item = node_to_return->item;
+    // set the item to be node to return
     temp = self->front->next;
     free(self->front);
     self->front = temp;
     pthread_mutex_unlock(&self->lock);
 
-    return node_to_return;
+    // return the item
+    return item;
 }

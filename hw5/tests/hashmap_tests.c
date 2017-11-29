@@ -51,6 +51,20 @@ void *thread_put(void *arg) {
     return NULL;
 }
 
+void *thread_delete(void *arg) {
+    map_insert_t *insert = (map_insert_t *) arg;
+
+    delete(global_map, MAP_KEY(insert->key_ptr, sizeof(int)));
+    return NULL;
+}
+
+void *thread_get(void *arg) {
+    map_insert_t *insert = (map_insert_t *) arg;
+
+    get(global_map, MAP_KEY(insert->key_ptr, sizeof(int)));
+    return NULL;
+}
+
 void map_fini(void) {
     invalidate_map(global_map);
 }
@@ -87,41 +101,6 @@ Test(map_suite, 02_multithreaded, .timeout = 2, .init = map_init, .fini = map_fi
     cr_assert_eq(num_items, NUM_THREADS, "Had %d items in map. Expected %d", num_items, NUM_THREADS);
 }
 
-/////////////
-
-Test(map_suite, 00_get, .timeout = 2, .init = map_init, .fini = map_fini)
-{
-    map_insert_t *insert = malloc(sizeof(map_insert_t));
-
-    // First put some values into the map
-    for(int index = 0; index < 5; index++)
-    {
-        int *key_ptr = malloc(sizeof(int));
-        int *val_ptr = malloc(sizeof(int));
-        *key_ptr = index;
-        *val_ptr = index * 2;
-        map_insert_t *insert = malloc(sizeof(map_insert_t));
-        insert->key_ptr = key_ptr;
-        insert->val_ptr = val_ptr;
-        put(global_map, MAP_KEY(insert->key_ptr, sizeof(int)), MAP_VAL(insert->val_ptr, sizeof(int)), false);
-        //printf("%ld\n", global_map->nodes[index].val.val_len);
-    }
-
-    // Now try and get some values
-    int *key_ptr = malloc(sizeof(int));
-    *key_ptr = 4;
-    insert->key_ptr = key_ptr;
-    map_val_t val_to_return = get(global_map, MAP_KEY(insert->key_ptr, sizeof(int)));
-
-    int *val_of_val;
-    val_of_val = (int *)(val_to_return.val_base);
-    //printf("Value inserted into map: %d\n", *((int *)val_of_val));
-
-    cr_assert_eq(*((int *)val_of_val), 8, "Expected: %d -- Actual: %d", 8, *((int *)val_of_val));
-
-}
-
-////////////
 
 Test(map_suite, 03_get, .timeout = 2, .init = map_init, .fini = map_fini) {
     pthread_t thread_ids[NUM_THREADS];
@@ -136,22 +115,43 @@ Test(map_suite, 03_get, .timeout = 2, .init = map_init, .fini = map_fini) {
         insert->key_ptr = key_ptr;
         insert->val_ptr = val_ptr;
 
-        if(pthread_create(&thread_ids[index], NULL, thread_put, insert) != 0)
+        if(pthread_create(&thread_ids[index], NULL, thread_put, insert) != 0){
             exit(EXIT_FAILURE);
+        }
 
-        // Use the key to get the value from the hashmap
-        map_key_t key;
-        key.key_base = key_ptr;
-        map_val_t retrieved_val = get(global_map,key);
-
-        // The val we expect
-        map_val_t val;
-        val.val_base = val_ptr;
-
-        // Compare what we have to what we expect.
-        int compare = memcmp(retrieved_val.val_base, val.val_base, val.val_len);
-        cr_assert_eq(compare, 0, "Keys do not match");
     }
+
+    for(int index = 0; index < NUM_THREADS; index++) {
+            pthread_join(thread_ids[index], NULL);
+    }
+
+
+    int index = 1;
+    // Use the key to get the value from the hashmap
+    int *key_ptr = malloc(sizeof(int));
+    int *val_ptr = malloc(sizeof(int));
+    *key_ptr = index;
+    *val_ptr = index * 2;
+
+    map_insert_t *insert = malloc(sizeof(map_insert_t));
+    insert->key_ptr = key_ptr;
+    insert->val_ptr = val_ptr;
+
+    map_key_t key;
+    key.key_len = sizeof(int);
+    key.key_base = key_ptr;
+    map_val_t retrieved_val = get(global_map,key);
+
+    // The val we expect
+    map_val_t val;
+    val.val_len = sizeof(int);
+    val.val_base = val_ptr;
+
+    // Compare what we have to what we expect.
+    int compare = memcmp(retrieved_val.val_base, val.val_base, val.val_len);
+    cr_assert_eq(compare, 0, "Keys do not match");
+
+
 }
 
 Test(map_suite, 04_deletion, .timeout = 2, .init = map_init, .fini = map_fini) {
@@ -171,17 +171,13 @@ Test(map_suite, 04_deletion, .timeout = 2, .init = map_init, .fini = map_fini) {
 
         if(pthread_create(&thread_ids[index], NULL, thread_put, insert) != 0)
             exit(EXIT_FAILURE);
-
-        //delete(global_map,  MAP_KEY(insert->key_ptr, sizeof(int)));
     }
 
-    // To test delete on one thread
-    /*// wait for threads to die before checking queue
+
     for(int index = 0; index < NUM_THREADS; index++) {
         pthread_join(thread_ids[index], NULL);
-    }*/
+    }
 
-    //int num_tombstones = 0;
     for(int index = 0; index < NUM_THREADS; index++) {
         int *key_ptr = malloc(sizeof(int));
         *key_ptr = index;
@@ -189,13 +185,14 @@ Test(map_suite, 04_deletion, .timeout = 2, .init = map_init, .fini = map_fini) {
         map_insert_t *insert = malloc(sizeof(map_insert_t));
         insert->key_ptr = key_ptr;
 
-        delete(global_map,  MAP_KEY(insert->key_ptr, sizeof(int)));
+        if(pthread_create(&thread_ids[index], NULL, thread_delete, insert) != 0)
+            exit(EXIT_FAILURE);
     }
 
-    // wait for threads to die before checking queue
     for(int index = 0; index < NUM_THREADS; index++) {
         pthread_join(thread_ids[index], NULL);
     }
+
 
     int num_items = global_map->size;
     cr_assert_eq(num_items, 0, "Had %d items in map. Expected %d", num_items, 0);
@@ -203,7 +200,7 @@ Test(map_suite, 04_deletion, .timeout = 2, .init = map_init, .fini = map_fini) {
     cr_assert_not_null(global_map, "Map returned was NULL");
 }
 
-Test(map_suite, 05_put, .timeout = 2, .init = map_init, .fini = map_fini) {
+Test(map_suite, 05_put_get, .timeout = 2, .init = map_init, .fini = map_fini) {
 
 
     // put

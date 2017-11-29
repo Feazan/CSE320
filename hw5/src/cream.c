@@ -6,11 +6,14 @@ void echo(int connfd);
 
 int main(int argc, char *argv[])
 {
-    printf("%s\n", "Entered Main in SERVER");
+    request_header_t my_request;
+    response_header_t my_reponse;
+
     int listenfd, connfd;
     socklen_t clientlen;
     struct sockaddr_storage clientaddr;
     char client_hostname[MAXLINE], client_port[MAXLINE];
+    char buf[MAXLINE];
 
     if (argc != 2)
     {
@@ -26,7 +29,16 @@ int main(int argc, char *argv[])
         connfd = Accept(listenfd, (SA *)&clientaddr, & clientlen);
         Getnameinfo((SA *) &clientaddr, clientlen, client_hostname, MAXLINE,
             client_port, MAXLINE, 0);
+
         printf("Connected to (%s, %s)\n", client_hostname, client_port);
+        printf("The code is: %d\n", my_request.request_code);
+        printf("Value of connfd is: %d\n", connfd);
+
+        read(connfd, buf, sizeof(request_header_t));
+        printf("request code: %X\n", buf[0]);
+
+        my_reponse.response_code = 200;
+        Rio_writen(connfd, &my_reponse, sizeof(response_header_t));
         echo(connfd);
         Close(connfd);
     }

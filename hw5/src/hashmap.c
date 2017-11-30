@@ -118,7 +118,9 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
 
 map_val_t get(hashmap_t *self, map_key_t key)
 {
-    // TODO: pthread_mutex_lock(&(self->fields_lock)); ++self->num_readers;
+    // TODO: pthread_mutex_lock(&(self->fields_lock));
+    // reader writer pattern in the book
+    // ++self->num_readers;
     if (self == NULL || key.key_len <= 0)
     {
         errno = EINVAL;

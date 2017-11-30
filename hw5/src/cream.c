@@ -67,6 +67,7 @@ void *thread(void *file_descriptor)
     {
         // dequeue needs to happen here
         int *connfd = (int*) dequeue(fd_queue);
+        request_header_t my_request;
         response_header_t my_reponse;
 
         printf("value of connfd in WORKER THREAD: %d\n", *connfd);
@@ -74,6 +75,30 @@ void *thread(void *file_descriptor)
         read(*connfd, buf, sizeof(request_header_t));
         printf("%s\n", "inside of while loop");
         printf("request code: %X\n", buf[0]);
+
+        memcpy(&my_request, buf, sizeof(request_header_t));
+        //store the request code
+        uint8_t request_code = my_request.request_code;
+        if(request_code)
+        {}
+        //store the key size
+        //store the value size
+        //store key
+        read(*connfd, buf, my_request.key_size);
+
+        char *key = malloc(sizeof(my_request.key_size) + 1);
+        memcpy(key, buf, sizeof(my_request.key_size));
+        *(key + my_request.key_size) = '\0';
+
+        printf("The key was: %s\n", key);
+
+        // store value
+
+        // deal with request
+        // respond
+
+
+
 
         my_reponse.response_code = 200;
         Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));

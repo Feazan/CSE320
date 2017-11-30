@@ -91,21 +91,43 @@ void *thread(void *file_descriptor)
 
         // store value
         read(*connfd, buf, my_request.value_size);
-        char *value = malloc(sizeof(my_request.key_size) + 1);
-        memcpy(value, buf, sizeof(my_request.key_size));
+        char *value = malloc(sizeof(my_request.value_size) + 1);
+        memcpy(value, buf, sizeof(my_request.value_size));
         *(value + my_request.value_size) = '\0';
 
         printf("The value was: %s\n", value);
+
+        uint32_t my_key_size = my_request.key_size;
+        uint32_t my_val_size = my_request.value_size;
+        // setting up for hashmap
+        map_key_t my_key;
+        my_key.key_base = (void *)key;
+        my_key.key_len = my_key_size;
+
+        map_val_t my_val;
+        my_val.val_base = (void *)value;
+        my_val.val_len = my_val_size;
+
 
         // deal with request
         if(request_code == PUT)
         {
             // Make sure to hash put!!
             printf("%s\n", "PUT");
+            put(client_map, my_key, my_val, true);
+            my_reponse.response_code = 0xc8;
+            Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
         }
         else if(request_code == GET)
         {
             printf("%s\n", "GET");
+            map_val_t value_returned =  get(client_map, my_key);
+            my_reponse.value_size = value_returned.val_len;
+            my_reponse.response_code = 0xc8;
+            printf("returned value: %s\n", (char *)value_returned.val_base);
+            Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+            Rio_writen(*connfd, value_returned.val_base, sizeof(my_reponse.value_size));
+
         }
         else if(request_code == EVICT)
         {
@@ -120,8 +142,8 @@ void *thread(void *file_descriptor)
 
 
 
-        my_reponse.response_code = 200;
-        Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+        //my_reponse.response_code = 200;
+        //Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
 
         Close(*connfd);
         free (connfd);

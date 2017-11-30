@@ -8,6 +8,7 @@ queue_t *fd_queue;
 hashmap_t *client_map;
 
 void *thread(void *file_descriptor);
+void destroy(map_key_t key, map_val_t val);
 
 int main(int argc, char *argv[])
 {
@@ -34,6 +35,8 @@ int main(int argc, char *argv[])
     }
 
     fd_queue = create_queue();
+    // TODO: is this how to pass the hash function?
+    client_map = create_map(atoi(argv[3]), jenkins_one_at_a_time_hash, destroy);
     int num_threads = atoi(argv[1]);
     listenfd = Open_listenfd(argv[2]);
 
@@ -54,7 +57,6 @@ int main(int argc, char *argv[])
         printf("Connected to (%s, %s)\n", client_hostname, client_port);
         // I think  this is where enqueue happens;
         // enqueue connfd
-        printf("value of connfd in MAIN: %d\n", *connfd);
         enqueue(fd_queue, connfd);
     }
     exit(0);
@@ -70,17 +72,12 @@ void *thread(void *file_descriptor)
         request_header_t my_request;
         response_header_t my_reponse;
 
-        printf("value of connfd in WORKER THREAD: %d\n", *connfd);
         char buf[1000];
         read(*connfd, buf, sizeof(request_header_t));
-        printf("%s\n", "inside of while loop");
-        printf("request code: %X\n", buf[0]);
 
         memcpy(&my_request, buf, sizeof(request_header_t));
         //store the request code
         uint8_t request_code = my_request.request_code;
-        if(request_code)
-        {}
         //store the key size
         //store the value size
         //store key
@@ -93,8 +90,31 @@ void *thread(void *file_descriptor)
         printf("The key was: %s\n", key);
 
         // store value
+        read(*connfd, buf, my_request.value_size);
+        char *value = malloc(sizeof(my_request.key_size) + 1);
+        memcpy(value, buf, sizeof(my_request.key_size));
+        *(value + my_request.value_size) = '\0';
+
+        printf("The value was: %s\n", value);
 
         // deal with request
+        if(request_code == PUT)
+        {
+            // Make sure to hash put!!
+            printf("%s\n", "PUT");
+        }
+        else if(request_code == GET)
+        {
+            printf("%s\n", "GET");
+        }
+        else if(request_code == EVICT)
+        {
+            printf("%s\n", "EVICT");
+        }
+        else if(request_code == CLEAR)
+        {
+            printf("%s\n", "CLEAR");
+        }
         // respond
 
 
@@ -106,4 +126,11 @@ void *thread(void *file_descriptor)
         Close(*connfd);
         free (connfd);
     }
+}
+
+// Copied destroy function from test files
+void destroy(map_key_t key, map_val_t val)
+{
+    free(key.key_base);
+    free(val.val_base);
 }

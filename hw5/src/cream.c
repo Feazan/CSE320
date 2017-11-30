@@ -132,6 +132,13 @@ void *thread(void *file_descriptor)
         else if(request_code == EVICT)
         {
             printf("%s\n", "EVICT");
+            map_node_t node_returned = delete(client_map, my_key);
+            my_reponse.value_size = node_returned.val.val_len;
+            my_reponse.response_code = 0xc8;
+            printf("deleted value: %s\n", (char *)node_returned.val.val_base);
+            Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+            Rio_writen(*connfd, node_returned.val.val_base, sizeof(my_reponse.value_size));
+
         }
         else if(request_code == CLEAR)
         {

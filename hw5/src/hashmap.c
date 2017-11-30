@@ -206,7 +206,7 @@ bool clear_map(hashmap_t *self)
         }
     }
     pthread_mutex_unlock(&(self->write_lock));
-	return true;
+    return true;
 }
 
 bool invalidate_map(hashmap_t *self)

@@ -35,7 +35,6 @@ int main(int argc, char *argv[])
     }
 
     fd_queue = create_queue();
-    // TODO: is this how to pass the hash function?
     client_map = create_map(atoi(argv[3]), jenkins_one_at_a_time_hash, destroy);
     int num_threads = atoi(argv[1]);
     listenfd = Open_listenfd(argv[2]);
@@ -78,13 +77,15 @@ void *thread(void *file_descriptor)
         memcpy(&my_request, buf, sizeof(request_header_t));
         //store the request code
         uint8_t request_code = my_request.request_code;
+        uint32_t my_key_size = my_request.key_size;
+        uint32_t my_val_size = my_request.value_size;
         //store the key size
         //store the value size
         //store key
         read(*connfd, &buf, my_request.key_size);
 
         char *key = malloc(sizeof(my_request.key_size) + 1);
-        memcpy(key, buf, sizeof(my_request.key_size));
+        memcpy(key, buf, my_request.key_size);
         *(key + my_request.key_size) = '\0';
 
         printf("The key was: %s\n", key);
@@ -92,13 +93,11 @@ void *thread(void *file_descriptor)
         // store value
         read(*connfd, &buf, my_request.value_size);
         char *value = malloc(sizeof(my_request.value_size) + 1);
-        memcpy(value, buf, sizeof(my_request.value_size));
+        memcpy(value, buf, my_request.value_size);
         *(value + my_request.value_size ) = '\0';
 
         printf("The value was: %s\n", value);
 
-        uint32_t my_key_size = my_request.key_size;
-        uint32_t my_val_size = my_request.value_size;
         // setting up for hashmap
         map_key_t my_key;
         my_key.key_base = (void *)key;
@@ -112,34 +111,41 @@ void *thread(void *file_descriptor)
         // deal with request
         if(request_code == PUT)
         {
-            // Make sure to hash put!!
-            printf("%s\n", "PUT");
-            put(client_map, my_key, my_val, true);
-            my_reponse.response_code = 0xc8;
-            Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+            bool put_response = false;
+            put_response = put(client_map, my_key, my_val, true);
+
+            if (put_response == true)
+            {
+                my_reponse.response_code = 200;
+                Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+            }
+            else
+            {
+                my_reponse.response_code = BAD_REQUEST;
+                Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+            }
         }
         else if(request_code == GET)
         {
-            printf("%s\n", "GET");
             map_val_t value_returned =  get(client_map, my_key);
             my_reponse.value_size = value_returned.val_len;
             printf("returned value: %s\n", (char *)value_returned.val_base);
             if ((char *)value_returned.val_base != NULL)
             {
-                my_reponse.response_code = 0xc8;
+                my_reponse.response_code = 200;
                 Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
                 Rio_writen(*connfd, value_returned.val_base, sizeof(value_returned.val_len));
             }
             else
             {
                 my_reponse.response_code = 404;
+                my_reponse.value_size = 0;
                 Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
             }
 
         }
         else if(request_code == EVICT)
         {
-            printf("%s\n", "EVICT");
             map_node_t node_returned = delete(client_map, my_key);
             my_reponse.value_size = node_returned.val.val_len;
             my_reponse.response_code = 0xc8;

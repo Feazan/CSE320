@@ -44,6 +44,8 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
         return false;
     }
 
+    pthread_mutex_lock(&(self->write_lock));
+
     if (self->capacity == self->size && force == false)
     {
         errno = ENOMEM;
@@ -57,7 +59,6 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
     // force entry into hashmap, if full
     if (force == true && self->capacity == self->size)
     {
-        pthread_mutex_lock(&(self->write_lock));
         self->nodes[index].key = key;
         self->nodes[index].val = val;
         pthread_mutex_unlock(&(self->write_lock));
@@ -67,13 +68,11 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
     // Simplest case -- Check if index is occupied
     if (self->nodes[index].key.key_base == NULL)
     {
-        pthread_mutex_lock(&(self->write_lock));
         self->nodes[index].key.key_len = key.key_len;
         self->nodes[index].key.key_base = key.key_base;
         self->nodes[index].val.val_len = val.val_len;
         self->nodes[index].val.val_base = val.val_base;
         self->size++;
-        printf("putting in %s\n", (char *)self->nodes[index].val.val_base);
         pthread_mutex_unlock(&(self->write_lock));
         return true;
     }
@@ -84,7 +83,6 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
         if ((duplicate_key_index = index_of_key(self, key)) != -1)
         {
             // Key was found, index needs updating
-            pthread_mutex_lock(&(self->write_lock));
             self->nodes[duplicate_key_index].key = key;
             self->nodes[duplicate_key_index].val = val;
             pthread_mutex_unlock(&(self->write_lock));
@@ -105,7 +103,7 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
             if (self->nodes[index].key.key_base == NULL
                 || self->nodes[index].tombstone == true)
             {
-                pthread_mutex_lock(&(self->write_lock));
+
                 self->nodes[index].key = key;
                 self->nodes[index].val = val;
                 self->nodes[index].tombstone = false;
@@ -116,6 +114,7 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
             index++;
         }
     }
+    pthread_mutex_unlock(&(self->write_lock));
     return false;
 }
 
@@ -124,7 +123,6 @@ map_val_t get(hashmap_t *self, map_key_t key)
     if (self == NULL || key.key_len <= 0)
     {
         errno = EINVAL;
-        // Should I decrement and unlock here?
         return MAP_VAL(NULL, 0);
     }
 
@@ -174,10 +172,9 @@ map_node_t delete(hashmap_t *self, map_key_t key)
     }
 
     map_node_t deleted_node;
+    pthread_mutex_lock(&(self->write_lock));
     // Find index of the element to remove
-    pthread_mutex_lock(&(self->fields_lock));
     int key_index = index_of_key(self, key);
-    pthread_mutex_unlock(&(self->fields_lock));
 
     if (key_index < 0) // Key was not found in map
     {
@@ -186,16 +183,15 @@ map_node_t delete(hashmap_t *self, map_key_t key)
     else
     {
         // Node that will be deleted
-        pthread_mutex_lock(&(self->fields_lock));
         deleted_node.key.key_len = self->nodes[key_index].key.key_len;
         deleted_node.key.key_base = self->nodes[key_index].key.key_base;
         deleted_node.val.val_len = self->nodes[key_index].val.val_len;
         deleted_node.val.val_base = self->nodes[key_index].val.val_base;
         self->nodes[key_index].tombstone = true;
         self->size--;
-        pthread_mutex_unlock(&(self->fields_lock));
     }
 
+    pthread_mutex_unlock(&(self->write_lock));
     return MAP_NODE(MAP_KEY(deleted_node.key.key_base, deleted_node.key.key_len)
         , MAP_VAL(deleted_node.val.val_base, deleted_node.val.val_len), false);
 }

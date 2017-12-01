@@ -49,6 +49,7 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
     if (self->capacity == self->size && force == false)
     {
         errno = ENOMEM;
+        pthread_mutex_unlock(&(self->write_lock));
         return false;
     }
 
@@ -120,13 +121,19 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
 
 map_val_t get(hashmap_t *self, map_key_t key)
 {
-    if (self == NULL || key.key_len <= 0)
+    if (self == NULL)
     {
         errno = EINVAL;
         return MAP_VAL(NULL, 0);
     }
 
     pthread_mutex_lock(&(self->fields_lock));
+    if (self->size == 0 || key.key_len <= 0)
+    {
+        pthread_mutex_unlock(&(self->fields_lock));
+        return MAP_VAL(NULL, 0);
+    }
+
     self->num_readers++;
     if (self->num_readers == 1)
     {
@@ -142,6 +149,12 @@ map_val_t get(hashmap_t *self, map_key_t key)
 
     if (key_index < 0) // Key was not found in map
     {
+        pthread_mutex_lock(&(self->fields_lock));
+        self->num_readers--;
+        if (self->num_readers == 0)
+        {
+            pthread_mutex_unlock(&(self->write_lock));
+        }
         pthread_mutex_unlock(&(self->fields_lock));
         return MAP_VAL(NULL, 0);
     }
@@ -165,7 +178,7 @@ map_val_t get(hashmap_t *self, map_key_t key)
 map_node_t delete(hashmap_t *self, map_key_t key)
 {
     // error cases
-    if (self == NULL || key.key_len <= 0)
+    if (key.key_len <= 0)
     {
         errno = EINVAL;
         return MAP_NODE(MAP_KEY(NULL, 0), MAP_VAL(NULL, 0), false);
@@ -173,11 +186,17 @@ map_node_t delete(hashmap_t *self, map_key_t key)
 
     map_node_t deleted_node;
     pthread_mutex_lock(&(self->write_lock));
+    if (self->size == 0 || self == NULL)
+    {
+        pthread_mutex_unlock(&(self->write_lock));
+        return MAP_NODE(MAP_KEY(NULL, 0), MAP_VAL(NULL, 0), false);
+    }
     // Find index of the element to remove
     int key_index = index_of_key(self, key);
 
     if (key_index < 0) // Key was not found in map
     {
+        pthread_mutex_unlock(&(self->write_lock));
         return MAP_NODE(MAP_KEY(NULL, 0), MAP_VAL(NULL, 0), false);
     }
     else
@@ -198,6 +217,7 @@ map_node_t delete(hashmap_t *self, map_key_t key)
 
 bool clear_map(hashmap_t *self)
 {
+    // TODO: self->invalid cannot be outside of lock
     if (self == NULL || self->invalid == true)
     {
         errno = EINVAL;

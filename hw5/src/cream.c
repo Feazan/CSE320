@@ -13,7 +13,6 @@ void destroy(map_key_t key, map_val_t val);
 int main(int argc, char *argv[])
 {
     int listenfd;
-    //int *connfd = calloc(1, sizeof(int *));
     socklen_t clientlen;
     struct sockaddr_storage clientaddr;
     char client_hostname[MAXLINE], client_port[MAXLINE];
@@ -48,14 +47,11 @@ int main(int argc, char *argv[])
     while (1)
     {
         int *connfd = calloc(1, sizeof(int));
-        printf("%s\n", "Waiting for connection request from client");
         clientlen = sizeof(struct sockaddr_storage);
         *connfd = Accept(listenfd, (SA *) &clientaddr, &clientlen);
         Getnameinfo((SA *) &clientaddr, clientlen, client_hostname, MAXLINE,
             client_port, MAXLINE, 0);
         printf("Connected to (%s, %s)\n", client_hostname, client_port);
-        // I think  this is where enqueue happens;
-        // enqueue connfd
         enqueue(fd_queue, connfd);
     }
     exit(0);
@@ -63,7 +59,6 @@ int main(int argc, char *argv[])
 
 void *thread(void *file_descriptor)
 {
-    //Pthread_detach(pthread_self());
     while (1)
     {
         // dequeue needs to happen here
@@ -88,7 +83,7 @@ void *thread(void *file_descriptor)
         memcpy(key, buf, my_request.key_size);
         *(key + my_request.key_size) = '\0';
 
-        printf("The key was: %s\n", key);
+        //printf("The key was: %s\n", key);
 
         // store value
         read(*connfd, &buf, my_request.value_size);
@@ -96,7 +91,7 @@ void *thread(void *file_descriptor)
         memcpy(value, buf, my_request.value_size);
         *(value + my_request.value_size ) = '\0';
 
-        printf("The value was: %s\n", value);
+        //printf("The value was: %s\n", value);
 
         // setting up for hashmap
         map_key_t my_key;
@@ -108,7 +103,7 @@ void *thread(void *file_descriptor)
         my_val.val_len = my_val_size;
 
 
-        // deal with request
+        // deal with request and respond
         if(request_code == PUT)
         {
             bool put_response = false;
@@ -129,7 +124,7 @@ void *thread(void *file_descriptor)
         {
             map_val_t value_returned =  get(client_map, my_key);
             my_reponse.value_size = value_returned.val_len;
-            printf("returned value: %s\n", (char *)value_returned.val_base);
+            //printf("returned value: %s\n", (char *)value_returned.val_base);
             if ((char *)value_returned.val_base != NULL)
             {
                 my_reponse.response_code = 200;
@@ -146,25 +141,18 @@ void *thread(void *file_descriptor)
         }
         else if(request_code == EVICT)
         {
-            map_node_t node_returned = delete(client_map, my_key);
-            my_reponse.value_size = node_returned.val.val_len;
-            my_reponse.response_code = 0xc8;
-            printf("deleted value: %s\n", (char *)node_returned.val.val_base);
+            delete(client_map, my_key);
+            my_reponse.response_code = 200;
             Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
-            Rio_writen(*connfd, node_returned.val.val_base, sizeof(my_reponse.value_size));
 
         }
         else if(request_code == CLEAR)
         {
-            printf("%s\n", "CLEAR");
+            clear_map(client_map);
+            my_reponse.response_code = 200;
+            Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+            //printf("%s\n", "CLEAR");
         }
-        // respond
-
-
-
-
-        //my_reponse.response_code = 200;
-        //Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
 
         Close(*connfd);
         free (connfd);

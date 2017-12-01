@@ -74,6 +74,7 @@ void *thread(void *file_descriptor)
         uint8_t request_code = my_request.request_code;
         uint32_t my_key_size = my_request.key_size;
         uint32_t my_val_size = my_request.value_size;
+
         //store the key size
         //store the value size
         //store key
@@ -106,6 +107,18 @@ void *thread(void *file_descriptor)
         // deal with request and respond
         if(request_code == PUT)
         {
+            // Make sure the values are valid
+            if (my_key.key_len < MIN_KEY_SIZE
+                || my_key.key_len > MAX_KEY_SIZE
+                || my_val.val_len < MIN_VALUE_SIZE
+                || my_val.val_len > MAX_VALUE_SIZE)
+            {
+                my_reponse.response_code = UNSUPPORTED;
+                my_reponse.value_size = 0;
+                Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+                continue;
+            }
+
             bool put_response = false;
             put_response = put(client_map, my_key, my_val, true);
 
@@ -151,7 +164,12 @@ void *thread(void *file_descriptor)
             clear_map(client_map);
             my_reponse.response_code = 200;
             Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
-            //printf("%s\n", "CLEAR");
+        }
+        else
+        {
+            my_reponse.response_code = 220;
+            my_reponse.value_size = 0;
+            Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
         }
 
         Close(*connfd);

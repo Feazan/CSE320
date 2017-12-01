@@ -72,8 +72,8 @@ void *thread(void *file_descriptor)
         request_header_t my_request;
         response_header_t my_reponse;
 
-        char buf[1000];
-        read(*connfd, buf, sizeof(request_header_t));
+        char buf[MAXLINE];
+        read(*connfd, &buf, sizeof(request_header_t));
 
         memcpy(&my_request, buf, sizeof(request_header_t));
         //store the request code
@@ -81,7 +81,7 @@ void *thread(void *file_descriptor)
         //store the key size
         //store the value size
         //store key
-        read(*connfd, buf, my_request.key_size);
+        read(*connfd, &buf, my_request.key_size);
 
         char *key = malloc(sizeof(my_request.key_size) + 1);
         memcpy(key, buf, sizeof(my_request.key_size));
@@ -90,10 +90,10 @@ void *thread(void *file_descriptor)
         printf("The key was: %s\n", key);
 
         // store value
-        read(*connfd, buf, my_request.value_size);
+        read(*connfd, &buf, my_request.value_size);
         char *value = malloc(sizeof(my_request.value_size) + 1);
         memcpy(value, buf, sizeof(my_request.value_size));
-        *(value + my_request.value_size) = '\0';
+        *(value + my_request.value_size ) = '\0';
 
         printf("The value was: %s\n", value);
 
@@ -123,10 +123,18 @@ void *thread(void *file_descriptor)
             printf("%s\n", "GET");
             map_val_t value_returned =  get(client_map, my_key);
             my_reponse.value_size = value_returned.val_len;
-            my_reponse.response_code = 0xc8;
             printf("returned value: %s\n", (char *)value_returned.val_base);
-            Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
-            Rio_writen(*connfd, value_returned.val_base, sizeof(my_reponse.value_size));
+            if ((char *)value_returned.val_base != NULL)
+            {
+                my_reponse.response_code = 0xc8;
+                Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+                Rio_writen(*connfd, value_returned.val_base, sizeof(value_returned.val_len));
+            }
+            else
+            {
+                my_reponse.response_code = 404;
+                Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+            }
 
         }
         else if(request_code == EVICT)

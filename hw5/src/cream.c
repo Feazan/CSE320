@@ -32,7 +32,11 @@ int main(int argc, char *argv[])
     // if the client asks for help
     if (argc >= 2 && strcmp(argv[1], "-h") == 0)
     {
-        printf("%s\n", "Help Screen");
+        printf("%s\n", "./cream [-h] NUM_WORKERS PORT_NUMBER MAX_ENTRIES");
+        printf("%s\n", "-h                 Displays this help menu and returns EXIT_SUCCESS.");
+        printf("%s\n", "NUM_WORKERS        The number of worker threads used to service requests.");
+        printf("%s\n", "PORT_NUMBER        Port number to listen on for incoming connections.");
+        printf("%s\n", "MAX_ENTRIES        The maximum number of entries that can be stored in `cream`'s underlying data store.");
         exit(0);
     }
 

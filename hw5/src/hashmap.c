@@ -38,13 +38,22 @@ hashmap_t *create_map(uint32_t capacity, hash_func_f hash_function, destructor_f
 bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
 {
     // error cases
-    if (self == NULL || key.key_len <= 0 || val.val_len <= 0)
+    if (self == NULL || key.key_len <= 0 || val.val_len <= 0
+        || key.key_base == NULL
+        || val.val_base == NULL)
     {
         errno = EINVAL;
         return false;
     }
 
     pthread_mutex_lock(&(self->write_lock));
+
+    if (self->invalid == true)
+    {
+        errno = EINVAL;
+        pthread_mutex_unlock(&(self->write_lock));
+        return false;
+    }
 
     if (self->capacity == self->size && force == false)
     {
@@ -121,15 +130,17 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
 
 map_val_t get(hashmap_t *self, map_key_t key)
 {
-    if (self == NULL)
+    if (self == NULL || key.key_len <= 0
+        || key.key_base == NULL)
     {
         errno = EINVAL;
         return MAP_VAL(NULL, 0);
     }
 
     pthread_mutex_lock(&(self->fields_lock));
-    if (self->size == 0 || key.key_len <= 0)
+    if (self->size == 0 || self->invalid == true)
     {
+        errno = EINVAL;
         pthread_mutex_unlock(&(self->fields_lock));
         return MAP_VAL(NULL, 0);
     }
@@ -178,7 +189,8 @@ map_val_t get(hashmap_t *self, map_key_t key)
 map_node_t delete(hashmap_t *self, map_key_t key)
 {
     // error cases
-    if (key.key_len <= 0)
+    if (self == NULL ||key.key_len <= 0
+        || key.key_base == NULL)
     {
         errno = EINVAL;
         return MAP_NODE(MAP_KEY(NULL, 0), MAP_VAL(NULL, 0), false);
@@ -186,8 +198,9 @@ map_node_t delete(hashmap_t *self, map_key_t key)
 
     map_node_t deleted_node;
     pthread_mutex_lock(&(self->write_lock));
-    if (self->size == 0 || self == NULL)
+    if (self->size == 0 || self->invalid == true)
     {
+        errno = EINVAL;
         pthread_mutex_unlock(&(self->write_lock));
         return MAP_NODE(MAP_KEY(NULL, 0), MAP_VAL(NULL, 0), false);
     }
@@ -266,7 +279,6 @@ bool invalidate_map(hashmap_t *self)
 
 int index_of_key(hashmap_t *self, map_key_t key)
 {
-    // TODO: error checking
     int key_index = -1;
     for (int i = 0; i < self->capacity; i++)
     {

@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "csapp.h"
 #include "queue.h"
+#include <debug.h>
 
 // create global variables for the map and the queue
 queue_t *fd_queue;
@@ -12,6 +13,8 @@ void destroy(map_key_t key, map_val_t val);
 
 int main(int argc, char *argv[])
 {
+    signal(SIGPIPE, SIG_IGN);
+
     int listenfd;
     socklen_t clientlen;
     struct sockaddr_storage clientaddr;
@@ -135,6 +138,16 @@ void *thread(void *file_descriptor)
         }
         else if(request_code == GET)
         {
+            // Make sure the values are valid
+            if (my_key.key_len < MIN_KEY_SIZE
+                || my_key.key_len > MAX_KEY_SIZE)
+            {
+                my_reponse.response_code = UNSUPPORTED;
+                my_reponse.value_size = 0;
+                Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+                continue;
+            }
+
             map_val_t value_returned =  get(client_map, my_key);
             my_reponse.value_size = value_returned.val_len;
             //printf("returned value: %s\n", (char *)value_returned.val_base);
@@ -154,6 +167,16 @@ void *thread(void *file_descriptor)
         }
         else if(request_code == EVICT)
         {
+            // Make sure the values are valid
+            if (my_key.key_len < MIN_KEY_SIZE
+                || my_key.key_len > MAX_KEY_SIZE)
+            {
+                my_reponse.response_code = UNSUPPORTED;
+                my_reponse.value_size = 0;
+                Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+                continue;
+            }
+
             delete(client_map, my_key);
             my_reponse.response_code = 200;
             Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));

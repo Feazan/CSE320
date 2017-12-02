@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <debug.h>
 #include "hashmap.h"
-#define NUM_THREADS 2500
+#define NUM_THREADS 5
 #define MAP_KEY(kbase, klen) (map_key_t) {.key_base = kbase, .key_len = klen}
 #define MAP_VAL(vbase, vlen) (map_val_t) {.val_base = vbase, .val_len = vlen}
 

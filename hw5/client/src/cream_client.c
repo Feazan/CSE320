@@ -93,13 +93,14 @@ int handle_request(char *hostname, char *port, char *input) {
             goto bad;
         }
 
-        return handle_test(Open_clientfd(hostname, port),
-                           Open_clientfd(hostname, port), key, value);
+        int fd1 = Open_clientfd(hostname, port);
+        int fd2 = Open_clientfd(hostname, port);
+        return handle_test(fd1, fd2, key, value);
     } else if (!strcmp(request, QUIT)) {
         return -1;
     }
 
-bad:
+    bad:
     printf("%s: invalid request type or arguments.\n", request);
     fflush(stdout);
     return 0;
@@ -141,19 +142,19 @@ int handle_get(int clientfd, char *key) {
     if (response_header.response_code == OK &&
         response_header.value_size != 0) {
         buf = Calloc(1, response_header.value_size + 1);
-        Rio_readn(clientfd, buf, response_header.value_size);
-        printf("get request completed successfully.\n");
-        printf("value: %s\n", buf);
-        free(buf);
-    } else {
-        printf("get request failed with response code of %d, and key_size of "
-               "%d.\n",
-               response_header.response_code, response_header.value_size);
-    }
+    Rio_readn(clientfd, buf, response_header.value_size);
+    printf("get request completed successfully.\n");
+    printf("value: %s\n", buf);
+    free(buf);
+} else {
+    printf("get request failed with response code of %d, and key_size of "
+     "%d.\n",
+     response_header.response_code, response_header.value_size);
+}
 
-    close(clientfd);
+close(clientfd);
 
-    return 0;
+return 0;
 }
 
 int handle_evict(int clientfd, char *key) {
@@ -171,8 +172,8 @@ int handle_evict(int clientfd, char *key) {
         printf("evict request completed successfully.\n");
     } else {
         printf("evict request failed with response code of %d, and key_size of "
-               "%d.\n",
-               response_header.response_code, response_header.value_size);
+         "%d.\n",
+         response_header.response_code, response_header.value_size);
     }
 
     return 0;
@@ -192,8 +193,8 @@ int handle_clear(int clientfd) {
         printf("clear request completed successfully.\n");
     } else {
         printf("clear request failed with response code of %d, and key_size of "
-               "%d.\n",
-               response_header.response_code, response_header.value_size);
+         "%d.\n",
+         response_header.response_code, response_header.value_size);
     }
 
     return 0;
@@ -214,8 +215,8 @@ int handle_test(int putfd, int getfd, char *key, char *value) {
 
     if (response_header.response_code != OK) {
         printf("get request failed with response code of %d, and key_size of "
-               "%d.\n",
-               response_header.response_code, response_header.value_size);
+         "%d.\n",
+         response_header.response_code, response_header.value_size);
         close(getfd);
         return 0;
     }

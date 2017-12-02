@@ -66,11 +66,16 @@ void *thread(void *file_descriptor)
     {
         // dequeue needs to happen here
         int *connfd = (int*) dequeue(fd_queue);
+        debug("connfd after dequeue %d", *connfd);
         request_header_t my_request;
         response_header_t my_reponse;
 
+        rio_t rio;
         char buf[MAXLINE];
-        read(*connfd, &buf, sizeof(request_header_t));
+        Rio_readinitb(&rio, *connfd);
+
+        //read(*connfd, &buf, sizeof(request_header_t));
+        rio_readnb(&rio, buf, sizeof(request_header_t));
 
         memcpy(&my_request, buf, sizeof(request_header_t));
         //store the request code
@@ -81,21 +86,23 @@ void *thread(void *file_descriptor)
         //store the key size
         //store the value size
         //store key
-        read(*connfd, &buf, my_request.key_size);
+        //read(*connfd, &buf, my_request.key_size);
+        rio_readnb(&rio, buf, my_request.key_size);
 
         char *key = malloc(sizeof(my_request.key_size) + 1);
         memcpy(key, buf, my_request.key_size);
         *(key + my_request.key_size) = '\0';
 
-        //printf("The key was: %s\n", key);
+        printf("The key was: %s\n", key);
 
         // store value
-        read(*connfd, &buf, my_request.value_size);
+        //read(*connfd, &buf, my_request.value_size);
+        rio_readnb(&rio, buf, my_request.value_size);
         char *value = malloc(sizeof(my_request.value_size) + 1);
         memcpy(value, buf, my_request.value_size);
         *(value + my_request.value_size ) = '\0';
 
-        //printf("The value was: %s\n", value);
+        printf("The value was: %s\n", value);
 
         // setting up for hashmap
         map_key_t my_key;
@@ -118,7 +125,7 @@ void *thread(void *file_descriptor)
             {
                 my_reponse.response_code = UNSUPPORTED;
                 my_reponse.value_size = 0;
-                Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+                rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
                 continue;
             }
 
@@ -128,12 +135,12 @@ void *thread(void *file_descriptor)
             if (put_response == true)
             {
                 my_reponse.response_code = 200;
-                Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+                rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
             }
             else
             {
                 my_reponse.response_code = BAD_REQUEST;
-                Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+                rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
             }
         }
         else if(request_code == GET)
@@ -144,7 +151,7 @@ void *thread(void *file_descriptor)
             {
                 my_reponse.response_code = UNSUPPORTED;
                 my_reponse.value_size = 0;
-                Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+                rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
                 continue;
             }
 
@@ -154,14 +161,14 @@ void *thread(void *file_descriptor)
             if ((char *)value_returned.val_base != NULL)
             {
                 my_reponse.response_code = 200;
-                Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
-                Rio_writen(*connfd, value_returned.val_base, sizeof(value_returned.val_len));
+                rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+                rio_writen(*connfd, value_returned.val_base, sizeof(value_returned.val_len));
             }
             else
             {
                 my_reponse.response_code = 404;
                 my_reponse.value_size = 0;
-                Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+                rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
             }
 
         }
@@ -173,26 +180,26 @@ void *thread(void *file_descriptor)
             {
                 my_reponse.response_code = UNSUPPORTED;
                 my_reponse.value_size = 0;
-                Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+                rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
                 continue;
             }
 
             delete(client_map, my_key);
             my_reponse.response_code = 200;
-            Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+            rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
 
         }
         else if(request_code == CLEAR)
         {
             clear_map(client_map);
             my_reponse.response_code = 200;
-            Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+            rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
         }
         else
         {
             my_reponse.response_code = 220;
             my_reponse.value_size = 0;
-            Rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+            rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
         }
 
         Close(*connfd);

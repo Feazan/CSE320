@@ -106,8 +106,6 @@ bool put(hashmap_t *self, map_key_t key, map_val_t val, bool force)
             if (index > (self->capacity - 1))
             {
                 index = 0;
-                // TODO: Do I need this line?
-                capacity = get_index(self, key);
             }
 
             if (self->nodes[index].key.key_base == NULL
@@ -240,13 +238,19 @@ bool clear_map(hashmap_t *self)
     pthread_mutex_lock(&(self->write_lock));
     for (int i = 0; i < self->capacity; i++)
     {
-        if (self->nodes[i].key.key_base != NULL)
+        if (self->nodes[i].key.key_base != NULL && self->nodes[i].tombstone == false)
         {
             self->destroy_function(self->nodes[i].key, self->nodes[i].val);
             self->size--;
             self->nodes[i].key.key_base = NULL;
             self->nodes[i].val.val_base = NULL;
         }
+    }
+
+    for (int i = 0; i < self->capacity; i++)
+    {
+        //self->nodes[i].tombstone = false;
+        self->nodes[i] = MAP_NODE(MAP_KEY(NULL, 0), MAP_VAL(NULL, 0), false);
     }
     pthread_mutex_unlock(&(self->write_lock));
     return true;

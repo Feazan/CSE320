@@ -41,7 +41,7 @@ bool invalidate_queue(queue_t *self, item_destructor_f destroy_function)
 
 bool enqueue(queue_t *self, void *item)
 {
-    if (self == NULL || self->invalid == true || item == NULL)
+    if (self == NULL || item == NULL)
     {
         errno = EINVAL;
         return false;
@@ -52,6 +52,12 @@ bool enqueue(queue_t *self, void *item)
     node_to_insert->item = item;
 
     pthread_mutex_lock(&self->lock);
+
+    if (self->invalid == true)
+    {
+        errno = EINVAL;
+        return false;
+    }
     // Insert to queue
     if (self->front == NULL)
     {
@@ -78,17 +84,24 @@ void *dequeue(queue_t *self)
         return NULL;
     }
 
+    sem_wait(&self->items); // TODO: This may need to be on top
+    pthread_mutex_lock(&self->lock);
     queue_node_t *temp;
     queue_node_t *node_to_return;
 
-    sem_wait(&self->items); // TODO: This may need to be on top
-    pthread_mutex_lock(&self->lock);
     node_to_return = self->front;
     void *item = node_to_return->item;
-    // set the item to be node to return
-    temp = self->front->next;
-    free(self->front);
-    self->front = temp;
+    if (self->front == self->rear)
+    {
+        self->front = self->rear =  NULL;
+    }
+    else
+    {
+        // set the item to be node to return
+        temp = self->front->next;
+        free(self->front);
+        self->front = temp;
+    }
     pthread_mutex_unlock(&self->lock);
 
     // return the item

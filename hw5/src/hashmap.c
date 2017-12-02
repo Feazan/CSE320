@@ -249,7 +249,6 @@ bool clear_map(hashmap_t *self)
 
     for (int i = 0; i < self->capacity; i++)
     {
-        //self->nodes[i].tombstone = false;
         self->nodes[i] = MAP_NODE(MAP_KEY(NULL, 0), MAP_VAL(NULL, 0), false);
     }
     pthread_mutex_unlock(&(self->write_lock));

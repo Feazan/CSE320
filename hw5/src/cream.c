@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
         *connfd = Accept(listenfd, (SA *) &clientaddr, &clientlen);
         Getnameinfo((SA *) &clientaddr, clientlen, client_hostname, MAXLINE,
             client_port, MAXLINE, 0);
-        printf("Connected to (%s, %s)\n", client_hostname, client_port);
+        //printf("Connected to (%s, %s)\n", client_hostname, client_port);
         enqueue(fd_queue, connfd);
     }
     exit(0);
@@ -69,6 +69,8 @@ void *thread(void *file_descriptor)
         debug("connfd after dequeue %d", *connfd);
         request_header_t my_request;
         response_header_t my_reponse;
+        map_key_t my_key;
+        map_val_t my_val;
 
         rio_t rio;
         char buf[MAXLINE];
@@ -92,8 +94,10 @@ void *thread(void *file_descriptor)
         char *key = malloc(sizeof(my_request.key_size) + 1);
         memcpy(key, buf, my_request.key_size);
         *(key + my_request.key_size) = '\0';
+        my_key.key_base = (void *)key;
+        my_key.key_len = my_key_size;
 
-        printf("The key was: %s\n", key);
+        //printf("The key was: %s\n", key);
 
         // store value
         //read(*connfd, &buf, my_request.value_size);
@@ -101,15 +105,6 @@ void *thread(void *file_descriptor)
         char *value = malloc(sizeof(my_request.value_size) + 1);
         memcpy(value, buf, my_request.value_size);
         *(value + my_request.value_size ) = '\0';
-
-        printf("The value was: %s\n", value);
-
-        // setting up for hashmap
-        map_key_t my_key;
-        my_key.key_base = (void *)key;
-        my_key.key_len = my_key_size;
-
-        map_val_t my_val;
         my_val.val_base = (void *)value;
         my_val.val_len = my_val_size;
 
@@ -126,6 +121,8 @@ void *thread(void *file_descriptor)
                 my_reponse.response_code = UNSUPPORTED;
                 my_reponse.value_size = 0;
                 rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+                Close(*connfd);
+                free (connfd);
                 continue;
             }
 
@@ -152,6 +149,8 @@ void *thread(void *file_descriptor)
                 my_reponse.response_code = UNSUPPORTED;
                 my_reponse.value_size = 0;
                 rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+                Close(*connfd);
+                free (connfd);
                 continue;
             }
 
@@ -181,6 +180,8 @@ void *thread(void *file_descriptor)
                 my_reponse.response_code = UNSUPPORTED;
                 my_reponse.value_size = 0;
                 rio_writen(*connfd, &my_reponse, sizeof(response_header_t));
+                Close(*connfd);
+                free (connfd);
                 continue;
             }
 
